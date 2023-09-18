@@ -1,12 +1,36 @@
 package unioeste.sd;
 
-import unioeste.sd.structs.*;
+import imgui.ImGui;
+import imgui.ImGuiIO;
+import imgui.app.Application;
+import imgui.app.Configuration;
+import imgui.flag.ImGuiConfigFlags;
+import imgui.flag.ImGuiWindowFlags;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
+public class Main extends Application {
+    @Override
+    protected void configure(Configuration config) {
+        config.setTitle("Dear ImGui is Awesome!");
+    }
 
+    @Override
+    public void process() {
+        ImGui.dockSpaceOverViewport(ImGui.getMainViewport());
+        ImGui.text("Hello, World!");
+    }
+
+    public static void main(String[] args) {
+        launch(new Main());
+    }
+
+    @Override
+    protected void initImGui(Configuration config) {
+        super.initImGui(config);
+        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
+    }
+}
+
+/*
 public class Main {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         Socket socket = new Socket("localhost",54000);
@@ -27,4 +51,4 @@ public class Main {
             }
         }
     }
-}
+}*/
