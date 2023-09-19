@@ -17,6 +17,8 @@ public class HandleClientTask implements Runnable{
 
     @Override
     public void run() {
+        System.out.println("[DEBUG]> Starting handle client task!");
+
         try {
             ClientInfoMessage clientMsg = connection.readMessage();
 
@@ -36,6 +38,13 @@ public class HandleClientTask implements Runnable{
 
             loop();
         } catch (IOException | ClassNotFoundException e) {
+            try {
+                connection.close();
+            } catch (IOException ignored) { }
+            if (server.getConnections().containsKey(connection.user)) {
+                server.getConnections().remove(connection.user);
+                server.sendToAll(server.getServerUser(), MessageType.CLIENTS_LIST_UPDATE);
+            }
             throw new RuntimeException(e);
         }
     }

@@ -12,6 +12,11 @@ public class User implements Serializable {
         this.username = username;
     }
 
+    public User(String username, String name) {
+        this.username = username;
+        this.name = name;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

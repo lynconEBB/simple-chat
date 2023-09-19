@@ -25,7 +25,7 @@ public class Server implements Runnable{
 
             while (isRunning) {
                 Socket newSocket = listenSocket.accept();
-                System.out.println("Novo cliente aceito");
+                System.out.println("[DEBUG]> Novo cliente aceito!");
                 HandleClientTask newTask = new HandleClientTask(newSocket,this);
                 executorService.execute(newTask);
             }

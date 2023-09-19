@@ -12,10 +12,10 @@ public class Connection {
     public User user;
 
     public Connection(Socket socket, User user) throws IOException {
+        this.user = user;
         this.socket = socket;
         objOutStream = new ObjectOutputStream(socket.getOutputStream());
         objInStream = new ObjectInputStream(socket.getInputStream());
-        this.user = user;
     }
 
     public Connection(Socket socket) throws IOException {
