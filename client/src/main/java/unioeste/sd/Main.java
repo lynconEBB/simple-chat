@@ -9,13 +9,13 @@ import imgui.flag.ImGuiInputTextFlags;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
+import unioeste.sd.structs.User;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Main extends Application {
 
-    private ImBoolean test = new ImBoolean(true);
     private List<String> list = new ArrayList<>();
     private ImString text = new ImString();
     private final LoginWindow loginWindow;
@@ -59,20 +59,7 @@ public class Main extends Application {
                 return;
             }
 
-            ImGui.inputText("Mensagem", text);
-            ImGui.sameLine();
-            if (ImGui.button("Enviar")) {
-                if (text.isNotEmpty()) {
-                    list.add(text.get());
-                    text.clear();
-                }
-            }
-
-            ImGui.separator();
-
             if (ImGui.beginChild("scrolling2", 0,0,false, ImGuiWindowFlags.HorizontalScrollbar)) {
-                ImVec2 fdsf = ImGui.calcTextSize("fdsf");
-                ImGui.dummy(0,ImGui.getWindowHeight() - (fdsf.y + 10));
                 for (String a : list) {
                     ImGui.text(a);
                 }
@@ -81,12 +68,28 @@ public class Main extends Application {
                 ImGui.setScrollHereY(1);
 
             ImGui.endChild();
+
+            ImGui.separator();
+
+            ImGui.inputText("Mensagem", text);
+            ImGui.sameLine();
+            if (ImGui.button("Enviar")) {
+                if (text.isNotEmpty()) {
+                    list.add(text.get());
+                    text.clear();
+                }
+            }
             ImGui.end();
 
-            ImGui.setWindowSize(1000,0);
-            ImGui.begin("users");
+            ImGui.begin("users", ImGuiWindowFlags.HorizontalScrollbar);
+            for (User user : client.getChatUsers()) {
+                ImGui.text("Nome: " + user.name);
+                ImGui.text("Username: " + user.username);
+                ImGui.separator();
+            }
+
             ImGui.end();
-            ImGui.setWindowSize(300,0);
+
             ImGui.begin("Files");
             ImGui.end();
         }

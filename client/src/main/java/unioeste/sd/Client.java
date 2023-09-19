@@ -20,13 +20,18 @@ public class Client implements Runnable{
             connection.user = user;
 
             connection.sendMessage(new ClientInfoMessage(user));
+
             ClientsListMessage listMsg = connection.readMessage();
-            chatUsers = listMsg.users;
+            handleClientListMessage(listMsg);
 
             return true;
         } catch (IOException | ClassNotFoundException e) {
             return false;
         }
+    }
+
+    private void handleClientListMessage(ClientsListMessage msg) {
+        chatUsers = msg.users;
     }
 
     @Override
@@ -40,6 +45,10 @@ public class Client implements Runnable{
                     ChatMessage chatmessage = (ChatMessage) msg;
                     System.out.println("[" + chatmessage.user.username + "]: " + chatmessage.text);
                 }
+                else if (msg instanceof ClientsListMessage) {
+                    handleClientListMessage((ClientsListMessage) msg);
+                }
+
             }
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -48,5 +57,9 @@ public class Client implements Runnable{
 
     public boolean isRunning() {
         return isRunning;
+    }
+
+    public List<User> getChatUsers() {
+        return chatUsers;
     }
 }
