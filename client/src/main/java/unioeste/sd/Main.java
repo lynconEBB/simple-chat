@@ -42,6 +42,7 @@ public class Main extends Application {
     public void process() {
         ImGui.dockSpaceOverViewport(ImGui.getMainViewport());
 
+/*
         if (showLoginWindow.get()) {
             if (loginWindow.draw(client)) {
 
@@ -52,20 +53,33 @@ public class Main extends Application {
                 showLoginWindow.set(false);
             }
         }
+*/
 
-        if (client.isRunning()) {
-            ImGui.begin("Chat messages");
+        if (true) {
+            ImGui.begin("Chat messages", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoTitleBar);
 
             if (ImGui.beginChild("scrolling", 0, -(ImGui.getFrameHeightWithSpacing()),false, ImGuiWindowFlags.HorizontalScrollbar)) {
-                int count = 1;
-                ImGui.setCursorPos(0,ImGui.getContentRegionAvailY() - 20);
-                ImGui.textWrapped("AAAAAAAA");
-                ImGui.setCursorPos(0,ImGui.getContentRegionAvailY() - 20);
-                ImGui.textWrapped("AAAAAAAA");
+                ImGui.dummy(0, ImGui.getContentRegionAvailY() - 100);
+                ImGui.text("lyncon");
+                ImGui.sameLine();
+                ImGui.text("18:09:43 says:");
+
+                String a ="AAAAllfd gfsdg df fdg dfl fdg dfgd dfg dfgd df gdfg df dfg dfgd fgdf gdfg AAAA";
+                ImVec2 imVec2 = ImGui.calcTextSize(a, true, ImGui.getWindowWidth());
+                ImGui.getWindowDrawList().addRectFilled(ImGui.getCursorScreenPosX(), ImGui.getCursorScreenPosY(),
+                        ImGui.getCursorScreenPosX() + imVec2.x, ImGui.getCursorScreenPosY() + imVec2.y,
+                        ImGui.colorConvertFloat4ToU32(255,255,0,255), 5);
+
+                ImGui.setCursorPos(ImGui.getCursorPosX() + 25, ImGui.getCursorPosY() + 50);
+                ImGui.pushStyleVar(ImGuiStyleVar.ItemInnerSpacing, 500, 500);
+                ImGui.pushTextWrapPos(ImGui.getWindowWidth());
+                ImGui.text("AAAAllfd gfsdg df fdg dfl fdg dfgd dfg dfgd df gdfg df dfg dfgd fgdf gdfg AAAA");
+                ImGui.popTextWrapPos();
+                ImGui.popStyleVar();
+
 /*
                 for (int i = 0; i < 100; i++) {
                     ImGui.getContentRegionAvailY();
-                    count++;
                 }
 */
             }
@@ -87,6 +101,7 @@ public class Main extends Application {
             ImGui.endGroup();
             ImGui.end();
 
+/*
             ImGui.begin("users", ImGuiWindowFlags.HorizontalScrollbar);
             if (client.getChatUsers() != null) {
                 for (User user : client.getChatUsers()) {
@@ -99,6 +114,7 @@ public class Main extends Application {
 
             ImGui.begin("Files");
             ImGui.end();
+*/
         }
     }
 
