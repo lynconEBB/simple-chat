@@ -3,9 +3,8 @@ package unioeste.sd;
 import imgui.*;
 import imgui.app.Application;
 import imgui.app.Configuration;
-import imgui.flag.ImGuiCond;
 import imgui.flag.ImGuiConfigFlags;
-import imgui.flag.ImGuiInputTextFlags;
+import imgui.flag.ImGuiStyleVar;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
@@ -16,8 +15,8 @@ import java.util.List;
 
 public class Main extends Application {
 
-    private List<String> list = new ArrayList<>();
-    private ImString text = new ImString();
+    private List<String> messages = new ArrayList<>();
+    private ImString currentText = new ImString();
     private final LoginWindow loginWindow;
     private ImBoolean showLoginWindow = new ImBoolean(true);
 
@@ -36,6 +35,7 @@ public class Main extends Application {
     @Override
     protected void configure(Configuration config) {
         config.setTitle("Simple App");
+        config.setFullScreen(true);
     }
 
     @Override
@@ -54,40 +54,47 @@ public class Main extends Application {
         }
 
         if (client.isRunning()) {
-            if (!ImGui.begin("Chat messages")) {
-                ImGui.end();
-                return;
-            }
+            ImGui.begin("Chat messages");
 
-            if (ImGui.beginChild("scrolling2", 0,0,false, ImGuiWindowFlags.HorizontalScrollbar)) {
-                for (String a : list) {
-                    ImGui.text(a);
+            if (ImGui.beginChild("scrolling", 0, -(ImGui.getFrameHeightWithSpacing()),false, ImGuiWindowFlags.HorizontalScrollbar)) {
+                int count = 1;
+                ImGui.setCursorPos(0,ImGui.getContentRegionAvailY() - 20);
+                ImGui.textWrapped("AAAAAAAA");
+                ImGui.setCursorPos(0,ImGui.getContentRegionAvailY() - 20);
+                ImGui.textWrapped("AAAAAAAA");
+/*
+                for (int i = 0; i < 100; i++) {
+                    ImGui.getContentRegionAvailY();
+                    count++;
                 }
+*/
             }
             if (ImGui.getScrollY() >= ImGui.getScrollMaxY())
                 ImGui.setScrollHereY(1);
-
             ImGui.endChild();
 
-            ImGui.separator();
 
-            ImGui.inputText("Mensagem", text);
+            ImGui.beginGroup();
+
+            ImGui.inputText("Mensagem", currentText);
             ImGui.sameLine();
             if (ImGui.button("Enviar")) {
-                if (text.isNotEmpty()) {
-                    list.add(text.get());
-                    text.clear();
+                if (currentText.isNotEmpty()) {
+                    messages.add(currentText.get());
+                    currentText.clear();
                 }
             }
+            ImGui.endGroup();
             ImGui.end();
 
             ImGui.begin("users", ImGuiWindowFlags.HorizontalScrollbar);
-            for (User user : client.getChatUsers()) {
-                ImGui.text("Nome: " + user.name);
-                ImGui.text("Username: " + user.username);
-                ImGui.separator();
+            if (client.getChatUsers() != null) {
+                for (User user : client.getChatUsers()) {
+                    ImGui.text("Nome: " + user.name);
+                    ImGui.text("Username: " + user.username);
+                    ImGui.separator();
+                }
             }
-
             ImGui.end();
 
             ImGui.begin("Files");

@@ -15,7 +15,7 @@ public class LoginWindow {
     private boolean showErrorMsg;
 
     public boolean draw(Client client) {
-        ImGui.begin("Login", ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove);
+        ImGui.begin("Login", ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse );
         ImGui.inputText("Server IP", serverIp);
         ImGui.inputInt("Server Port", serverPort);
         ImGui.separator();
