@@ -1,15 +1,26 @@
 package unioeste.sd;
 
 import unioeste.sd.structs.*;
+import unioeste.sd.widgets.MessageWidget;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Client implements Runnable{
     private Connection connection;
-    private List<User> chatUsers;
+    private Main mainWindow;
     private boolean isRunning = false;
+
+    public IncomingMessagesManager inManager;
+    public OutgoingMessagesManager outManager;
+
+    public Client(Main mainWindow) {
+        this.mainWindow = mainWindow;
+        this.inManager = new IncomingMessagesManager(this, mainWindow);
+        this.outManager = new OutgoingMessagesManager(this, mainWindow);
+    }
 
     public boolean tryInitConnection(String ip, int port, User user) {
         Socket socket = null;
@@ -22,7 +33,15 @@ public class Client implements Runnable{
             connection.sendMessage(new ClientInfoMessage(user));
 
             ClientsListMessage listMsg = connection.readMessage();
-            handleClientListMessage(listMsg);
+            mainWindow.handleNewClientsListMessage(listMsg);
+
+            Thread inManagerThread = new Thread(inManager);
+            inManagerThread.setDaemon(true);
+            inManagerThread.start();
+
+            Thread outManagerThread = new Thread(outManager);
+            outManagerThread.setDaemon(true);
+            outManagerThread.start();
 
             return true;
         } catch (IOException | ClassNotFoundException e) {
@@ -30,27 +49,23 @@ public class Client implements Runnable{
         }
     }
 
-    private void handleClientListMessage(ClientsListMessage msg) {
-        chatUsers = msg.users;
-    }
-
     @Override
     public void run() {
         isRunning = true;
         try {
             while (isRunning) {
-                Message msg;
-                msg = connection.readMessage();
+                Message msg = connection.readMessage();
+
                 if (msg instanceof ChatMessage) {
-                    ChatMessage chatmessage = (ChatMessage) msg;
-                    System.out.println("[" + chatmessage.user.username + "]: " + chatmessage.text);
+                    mainWindow.handleNewChatMessage((ChatMessage) msg);
                 }
                 else if (msg instanceof ClientsListMessage) {
-                    handleClientListMessage((ClientsListMessage) msg);
+                    mainWindow.handleNewClientsListMessage((ClientsListMessage) msg);
                 }
 
             }
         } catch (IOException | ClassNotFoundException e) {
+            this.isRunning = false;
             throw new RuntimeException(e);
         }
     }
@@ -59,7 +74,11 @@ public class Client implements Runnable{
         return isRunning;
     }
 
-    public List<User> getChatUsers() {
-        return chatUsers;
+    public void setRunning(boolean running) {
+        isRunning = running;
+    }
+
+    public Connection getConnection() {
+        return connection;
     }
 }

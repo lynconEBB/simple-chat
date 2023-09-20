@@ -4,26 +4,37 @@ import imgui.*;
 import imgui.app.Application;
 import imgui.app.Configuration;
 import imgui.flag.ImGuiConfigFlags;
-import imgui.flag.ImGuiStyleVar;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.util.nfd.NativeFileDialog;
+import unioeste.sd.dialogs.LoginDialog;
+import unioeste.sd.structs.ChatMessage;
+import unioeste.sd.structs.ClientsListMessage;
 import unioeste.sd.structs.User;
+import unioeste.sd.widgets.MessageWidget;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Main extends Application {
 
-    private List<String> messages = new ArrayList<>();
     private ImString currentText = new ImString();
-    private final LoginWindow loginWindow;
+    private final LoginDialog loginDialog;
     private ImBoolean showLoginWindow = new ImBoolean(true);
 
-    private Client client = new Client();
+    private final List<MessageWidget> messageWidgets;
+    private List<User> usersOnline;
+
+    private Client client;
 
     public Main() {
-        loginWindow = new LoginWindow();
+        client = new Client(this);
+        loginDialog = new LoginDialog();
+        usersOnline = new ArrayList<>();
+        messageWidgets = new ArrayList<>();
     }
 
     @Override
@@ -34,7 +45,7 @@ public class Main extends Application {
 
     @Override
     protected void configure(Configuration config) {
-        config.setTitle("Simple App");
+        config.setTitle("Simple Chat");
         config.setFullScreen(true);
     }
 
@@ -42,70 +53,63 @@ public class Main extends Application {
     public void process() {
         ImGui.dockSpaceOverViewport(ImGui.getMainViewport());
 
-/*
         if (showLoginWindow.get()) {
-            if (loginWindow.draw(client)) {
+            if (loginDialog.draw(client)) {
 
-                Thread thread = new Thread(client);
-                thread.setDaemon(true);
-                thread.start();
+                Thread clientThread = new Thread(client);
+                clientThread.setDaemon(true);
+                clientThread.start();
 
                 showLoginWindow.set(false);
             }
         }
-*/
 
-        if (true) {
+        if (client.isRunning()) {
             ImGui.begin("Chat messages", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoTitleBar);
 
             if (ImGui.beginChild("scrolling", 0, -(ImGui.getFrameHeightWithSpacing()),false, ImGuiWindowFlags.HorizontalScrollbar)) {
-                ImGui.dummy(0, ImGui.getContentRegionAvailY() - 100);
-                ImGui.text("lyncon");
-                ImGui.sameLine();
-                ImGui.text("18:09:43 says:");
 
-                String a ="AAAAllfd gfsdg df fdg dfl fdg dfgd dfg dfgd df gdfg df dfg dfgd fgdf gdfg AAAA";
-                ImVec2 imVec2 = ImGui.calcTextSize(a, true, ImGui.getWindowWidth());
-                ImGui.getWindowDrawList().addRectFilled(ImGui.getCursorScreenPosX(), ImGui.getCursorScreenPosY(),
-                        ImGui.getCursorScreenPosX() + imVec2.x, ImGui.getCursorScreenPosY() + imVec2.y,
-                        ImGui.colorConvertFloat4ToU32(255,255,0,255), 5);
-
-                ImGui.setCursorPos(ImGui.getCursorPosX() + 25, ImGui.getCursorPosY() + 50);
-                ImGui.pushStyleVar(ImGuiStyleVar.ItemInnerSpacing, 500, 500);
-                ImGui.pushTextWrapPos(ImGui.getWindowWidth());
-                ImGui.text("AAAAllfd gfsdg df fdg dfl fdg dfgd dfg dfgd df gdfg df dfg dfgd fgdf gdfg AAAA");
-                ImGui.popTextWrapPos();
-                ImGui.popStyleVar();
-
-/*
-                for (int i = 0; i < 100; i++) {
-                    ImGui.getContentRegionAvailY();
+                float accum = 10;
+                for (MessageWidget widget: messageWidgets) {
+                    accum += widget.getWidgetHeight();
                 }
-*/
+                if (accum < ImGui.getContentRegionAvailY()) {
+                    ImGui.dummy(0, ImGui.getContentRegionAvailY() - accum);
+                }
+
+                for (MessageWidget widget : messageWidgets) {
+                    widget.draw();
+                }
             }
+
+            ImGui.setCursorPosY(ImGui.getCursorPosY() + 5);
+            ImGui.dummy(0,1);
+
             if (ImGui.getScrollY() >= ImGui.getScrollMaxY())
-                ImGui.setScrollHereY(1);
+                ImGui.setScrollHereY(1f);
+
             ImGui.endChild();
 
-
-            ImGui.beginGroup();
-
-            ImGui.inputText("Mensagem", currentText);
+            ImGui.inputText("Message", currentText);
             ImGui.sameLine();
-            if (ImGui.button("Enviar")) {
+            if (ImGui.button("Send")) {
                 if (currentText.isNotEmpty()) {
-                    messages.add(currentText.get());
+                    ChatMessage chatMessage = new ChatMessage(currentText.get());
+                    chatMessage.user = client.getConnection().user;
+                    client.outManager.sendMessage(chatMessage);
+
+                    if (chatMessage.text.charAt(0) != '/')
+                        messageWidgets.add(new MessageWidget(chatMessage));
+
                     currentText.clear();
                 }
             }
-            ImGui.endGroup();
             ImGui.end();
 
-/*
             ImGui.begin("users", ImGuiWindowFlags.HorizontalScrollbar);
-            if (client.getChatUsers() != null) {
-                for (User user : client.getChatUsers()) {
-                    ImGui.text("Nome: " + user.name);
+            {
+                for (User user : usersOnline) {
+                    ImGui.text("Name: " + user.name);
                     ImGui.text("Username: " + user.username);
                     ImGui.separator();
                 }
@@ -113,9 +117,21 @@ public class Main extends Application {
             ImGui.end();
 
             ImGui.begin("Files");
+            {
+                if (ImGui.button("open file")) {
+                    PointerBuffer a = PointerBuffer.allocateDirect(10);
+                    NativeFileDialog.NFD_OpenDialog(new StringBuffer(), new StringBuffer(),a);
+                }
+            }
             ImGui.end();
-*/
         }
+    }
+
+    public void handleNewChatMessage(ChatMessage message) {
+        this.messageWidgets.add(new MessageWidget(message));
+    }
+    public void handleNewClientsListMessage(ClientsListMessage message) {
+        usersOnline = message.users;
     }
 
     public static void main(String[] args) {

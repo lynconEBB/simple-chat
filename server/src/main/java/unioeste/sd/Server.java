@@ -16,6 +16,7 @@ public class Server implements Runnable{
     private boolean isRunning = false;
     private Map<User, Connection> connections = new ConcurrentHashMap<>();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
+
     @Override
     public void run() {
         isRunning = true;
@@ -45,6 +46,13 @@ public class Server implements Runnable{
         }
     }
 
+    public void sendTo(User sourceUser, User dstUser,  ChatMessage message ) throws IOException {
+        message.user = sourceUser;
+        message.isWhisper = true;
+        if (connections.containsKey(dstUser)) {
+            connections.get(dstUser).sendMessage(message);
+        }
+    }
     public void sendToAllInclusive(User sourceUser, MessageType type) {
         sendToAll(sourceUser,type, true);
     }
@@ -87,15 +95,25 @@ public class Server implements Runnable{
         return serverUser;
     }
 
-    public void parseCommand(User user, String text) {
+    public void parseCommand(User user, String text) throws IOException {
         text = text.substring(1);
         String[] parts = text.split(" ");
 
         if (parts.length == 0)
             return;
 
-        if (parts[0] == "kick") {
-
+        if (parts[0].equals("whisper") && parts.length == 3) {
+            Connection dstUserConnection = connections.get(new User(parts[1]));
+            if (dstUserConnection != null) {
+                ChatMessage msg = new ChatMessage(parts[2]);
+                msg.isWhisper = true;
+                msg.user = user;
+                dstUserConnection.sendMessage(msg);
+            } else {
+                sendTo(serverUser, user, new ChatMessage("User not found!"));
+            }
+        } else {
+            sendTo(serverUser, user, new ChatMessage("Command incorrect!"));
         }
     }
 }

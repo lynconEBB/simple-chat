@@ -5,6 +5,7 @@ import unioeste.sd.structs.*;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class HandleClientTask implements Runnable{
     private final Server server;
@@ -26,14 +27,14 @@ public class HandleClientTask implements Runnable{
                 throw new RuntimeException("Mensagem inválida");
 
             if (server.getConnections().containsKey(clientMsg.userInfo)) {
-                throw new RuntimeException("Usuário com nome já existente");
+                throw new RuntimeException("Usuário com nome ja existente");
             }
 
             connection.user = clientMsg.userInfo;
             server.getConnections().put(clientMsg.userInfo, connection);
 
             server.sendToAll(server.getServerUser(), MessageType.CLIENTS_LIST_UPDATE);
-            server.sendToAll(server.getServerUser(), new ChatMessage("Usuário " + connection.user.username + "entrou no chat!"));
+            server.sendToAll(server.getServerUser(), new ChatMessage("Usuario " + connection.user.username + " entrou no chat!"));
             System.out.println("Usuário " + connection.user.username + " entrou no chat!");
 
             loop();
@@ -44,6 +45,7 @@ public class HandleClientTask implements Runnable{
             if (server.getConnections().containsKey(connection.user)) {
                 server.getConnections().remove(connection.user);
                 server.sendToAll(server.getServerUser(), MessageType.CLIENTS_LIST_UPDATE);
+                server.sendToAll(server.getServerUser(), new ChatMessage("Usuario " + connection.user.username + " saiu do chat!"));
             }
             throw new RuntimeException(e);
         }
