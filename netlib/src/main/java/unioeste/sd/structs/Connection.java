@@ -9,6 +9,7 @@ public class Connection {
     private final Socket socket;
     private final ObjectOutputStream objOutStream;
     private final ObjectInputStream objInStream;
+
     public User user;
 
     public Connection(Socket socket, User user) throws IOException {

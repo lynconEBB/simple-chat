@@ -10,9 +10,11 @@ import java.nio.charset.StandardCharsets;
 public class HandleClientTask implements Runnable{
     private final Server server;
     private final Connection connection;
+    private OutgoinMessageManager outManager;
 
     public HandleClientTask(Socket socket, Server server) throws IOException {
         this.connection = new Connection(socket);
+        this.outManager = new OutgoinMessageManager(server, connection);
         this.server = server;
     }
 
@@ -33,6 +35,9 @@ public class HandleClientTask implements Runnable{
             connection.user = clientMsg.userInfo;
             server.getConnections().put(clientMsg.userInfo, connection);
 
+            server.getOutManagers().put(clientMsg.userInfo, outManager);
+            outManager.start();
+
             server.sendToAll(server.getServerUser(), MessageType.CLIENTS_LIST_UPDATE);
             server.sendToAll(server.getServerUser(), new ChatMessage("Usuario " + connection.user.username + " entrou no chat!"));
             System.out.println("Usuário " + connection.user.username + " entrou no chat!");
@@ -47,6 +52,7 @@ public class HandleClientTask implements Runnable{
                 server.sendToAll(server.getServerUser(), MessageType.CLIENTS_LIST_UPDATE);
                 server.sendToAll(server.getServerUser(), new ChatMessage("Usuario " + connection.user.username + " saiu do chat!"));
             }
+            server.getOutManagers().remove(connection.user);
             throw new RuntimeException(e);
         }
     }
@@ -62,6 +68,9 @@ public class HandleClientTask implements Runnable{
                 } else {
                     server.sendToAll(connection.user, chatMessage);
                 }
+            }
+            if (msg instanceof FilePacketMessage filePacket) {
+                server.sendToAll(connection.user, filePacket);
             }
         }
     }

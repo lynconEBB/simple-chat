@@ -15,8 +15,12 @@ public class Server implements Runnable{
     private final int port = 54000;
     private boolean isRunning = false;
     private Map<User, Connection> connections = new ConcurrentHashMap<>();
+    private Map<User, OutgoinMessageManager> outManagers = new ConcurrentHashMap<>();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
 
+    public static void start() {
+        new Thread(new Server()).start();
+    }
     @Override
     public void run() {
         isRunning = true;
@@ -27,21 +31,11 @@ public class Server implements Runnable{
             while (isRunning) {
                 Socket newSocket = listenSocket.accept();
                 System.out.println("[DEBUG]> Novo cliente aceito!");
+
                 HandleClientTask newTask = new HandleClientTask(newSocket,this);
                 executorService.execute(newTask);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void printInfo() {
-        try {
-            System.out.println("Server Initiated");
-            System.out.println("Server ip: " + InetAddress.getLocalHost().getHostAddress());
-            System.out.println("Server port:" + port);
-        } catch (UnknownHostException e) {
-            System.out.println("Cant get server ip!");
             throw new RuntimeException(e);
         }
     }
@@ -76,23 +70,11 @@ public class Server implements Runnable{
     private void sendToAll(User sourceUser, Message message, boolean isInclusive) {
         message.user = sourceUser;
 
-        connections.forEach((user, connection) -> {
+        outManagers.forEach((user, outManager) -> {
             if (isInclusive || user != sourceUser) {
-                try {
-                    connection.sendMessage(message);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                outManager.sendMessage(message);
             }
         });
-    }
-
-    public Map<User, Connection> getConnections() {
-        return connections;
-    }
-
-    public User getServerUser() {
-        return serverUser;
     }
 
     public void parseCommand(User user, String text) throws IOException {
@@ -114,6 +96,29 @@ public class Server implements Runnable{
             }
         } else {
             sendTo(serverUser, user, new ChatMessage("Command incorrect!"));
+        }
+    }
+
+    public Map<User, Connection> getConnections() {
+        return connections;
+    }
+
+    public User getServerUser() {
+        return serverUser;
+    }
+
+    public Map<User, OutgoinMessageManager> getOutManagers() {
+        return outManagers;
+    }
+
+    public void printInfo() {
+        try {
+            System.out.println("Server Initiated");
+            System.out.println("Server ip: " + InetAddress.getLocalHost().getHostAddress());
+            System.out.println("Server port:" + port);
+        } catch (UnknownHostException e) {
+            System.out.println("Cant get server ip!");
+            throw new RuntimeException(e);
         }
     }
 }

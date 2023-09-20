@@ -7,14 +7,15 @@ import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.util.nfd.NativeFileDialog;
+import unioeste.sd.dialogs.FilesDialog;
 import unioeste.sd.dialogs.LoginDialog;
 import unioeste.sd.structs.ChatMessage;
 import unioeste.sd.structs.ClientsListMessage;
+import unioeste.sd.structs.FilePacketMessage;
 import unioeste.sd.structs.User;
 import unioeste.sd.widgets.MessageWidget;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +23,11 @@ import java.util.List;
 public class Main extends Application {
 
     private ImString currentText = new ImString();
-    private final LoginDialog loginDialog;
-    private ImBoolean showLoginWindow = new ImBoolean(true);
 
+    private ImBoolean showLoginWindow = new ImBoolean(true);
+    private final LoginDialog loginDialog;
+
+    private final FilesDialog filesDialog;
     private final List<MessageWidget> messageWidgets;
     private List<User> usersOnline;
 
@@ -35,6 +38,7 @@ public class Main extends Application {
         loginDialog = new LoginDialog();
         usersOnline = new ArrayList<>();
         messageWidgets = new ArrayList<>();
+        filesDialog = new FilesDialog();
     }
 
     @Override
@@ -55,11 +59,6 @@ public class Main extends Application {
 
         if (showLoginWindow.get()) {
             if (loginDialog.draw(client)) {
-
-                Thread clientThread = new Thread(client);
-                clientThread.setDaemon(true);
-                clientThread.start();
-
                 showLoginWindow.set(false);
             }
         }
@@ -106,7 +105,9 @@ public class Main extends Application {
             }
             ImGui.end();
 
-            ImGui.begin("users", ImGuiWindowFlags.HorizontalScrollbar);
+            filesDialog.draw(client);
+
+            ImGui.begin("Online Users", ImGuiWindowFlags.HorizontalScrollbar);
             {
                 for (User user : usersOnline) {
                     ImGui.text("Name: " + user.name);
@@ -115,16 +116,8 @@ public class Main extends Application {
                 }
             }
             ImGui.end();
-
-            ImGui.begin("Files");
-            {
-                if (ImGui.button("open file")) {
-                    PointerBuffer a = PointerBuffer.allocateDirect(10);
-                    NativeFileDialog.NFD_OpenDialog(new StringBuffer(), new StringBuffer(),a);
-                }
-            }
-            ImGui.end();
         }
+
     }
 
     public void handleNewChatMessage(ChatMessage message) {
@@ -132,6 +125,13 @@ public class Main extends Application {
     }
     public void handleNewClientsListMessage(ClientsListMessage message) {
         usersOnline = message.users;
+    }
+    public void handleFilePacketMessage(FilePacketMessage message) {
+        try {
+            filesDialog.processPacket(message);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void main(String[] args) {

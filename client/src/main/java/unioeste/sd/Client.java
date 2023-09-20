@@ -8,10 +8,10 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client implements Runnable{
+public class Client {
     private Connection connection;
     private Main mainWindow;
-    private boolean isRunning = false;
+    private volatile boolean isRunning = false;
 
     public IncomingMessagesManager inManager;
     public OutgoingMessagesManager outManager;
@@ -23,7 +23,7 @@ public class Client implements Runnable{
     }
 
     public boolean tryInitConnection(String ip, int port, User user) {
-        Socket socket = null;
+        Socket socket;
         try {
             socket = new Socket(ip,port);
 
@@ -34,6 +34,8 @@ public class Client implements Runnable{
 
             ClientsListMessage listMsg = connection.readMessage();
             mainWindow.handleNewClientsListMessage(listMsg);
+
+            isRunning = true;
 
             Thread inManagerThread = new Thread(inManager);
             inManagerThread.setDaemon(true);
@@ -46,27 +48,6 @@ public class Client implements Runnable{
             return true;
         } catch (IOException | ClassNotFoundException e) {
             return false;
-        }
-    }
-
-    @Override
-    public void run() {
-        isRunning = true;
-        try {
-            while (isRunning) {
-                Message msg = connection.readMessage();
-
-                if (msg instanceof ChatMessage) {
-                    mainWindow.handleNewChatMessage((ChatMessage) msg);
-                }
-                else if (msg instanceof ClientsListMessage) {
-                    mainWindow.handleNewClientsListMessage((ClientsListMessage) msg);
-                }
-
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            this.isRunning = false;
-            throw new RuntimeException(e);
         }
     }
 

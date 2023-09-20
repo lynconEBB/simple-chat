@@ -1,9 +1,6 @@
 package unioeste.sd;
 
-import unioeste.sd.structs.ChatMessage;
-import unioeste.sd.structs.ClientsListMessage;
-import unioeste.sd.structs.Connection;
-import unioeste.sd.structs.Message;
+import unioeste.sd.structs.*;
 
 import java.io.IOException;
 
@@ -27,6 +24,9 @@ public class IncomingMessagesManager implements Runnable{
                 }
                 else if (msg instanceof ClientsListMessage) {
                     mainWindow.handleNewClientsListMessage((ClientsListMessage) msg);
+                }
+                else if (msg instanceof FilePacketMessage) {
+                    mainWindow.handleFilePacketMessage((FilePacketMessage) msg);
                 }
 
             }
