@@ -1,11 +1,11 @@
 package unioeste.sd;
 
 
+import unioeste.sd.connection.Connection;
 import unioeste.sd.structs.*;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 
 public class HandleClientTask implements Runnable{
     private final Server server;

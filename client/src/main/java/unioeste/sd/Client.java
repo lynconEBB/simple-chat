@@ -1,12 +1,10 @@
 package unioeste.sd;
 
+import unioeste.sd.connection.Connection;
 import unioeste.sd.structs.*;
-import unioeste.sd.widgets.MessageWidget;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Client {
     private Connection connection;

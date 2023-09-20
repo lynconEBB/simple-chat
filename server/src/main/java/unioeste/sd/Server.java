@@ -1,5 +1,6 @@
 package unioeste.sd;
 
+import unioeste.sd.connection.Connection;
 import unioeste.sd.structs.*;
 
 import java.io.IOException;

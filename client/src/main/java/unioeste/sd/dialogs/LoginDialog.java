@@ -10,7 +10,7 @@ import unioeste.sd.structs.User;
 public class LoginDialog {
     private ImString username = new ImString();
     private ImString name = new ImString();
-    private ImString serverIp = new ImString("127.0.0.1");
+    private ImString serverIp = new ImString("127.0.0.1", 200);
     private ImInt serverPort = new ImInt(54000);
     private boolean showErrorMsg;
 
@@ -40,7 +40,6 @@ public class LoginDialog {
                 ImGui.sameLine();
                 ImGui.textColored(255,0,0,255, "Erro ao tentar conectar!");
             }
-
         }
         ImGui.end();
 

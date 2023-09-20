@@ -1,13 +1,11 @@
 package unioeste.sd;
 
-import unioeste.sd.structs.ChatMessage;
-import unioeste.sd.structs.Connection;
+import unioeste.sd.connection.Connection;
 import unioeste.sd.structs.FilePacketMessage;
 import unioeste.sd.structs.Message;
 
 import java.io.IOException;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class OutgoinMessageManager implements Runnable{

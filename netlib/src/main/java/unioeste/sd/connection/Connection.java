@@ -1,4 +1,7 @@
-package unioeste.sd.structs;
+package unioeste.sd.connection;
+
+import unioeste.sd.structs.Message;
+import unioeste.sd.structs.User;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
