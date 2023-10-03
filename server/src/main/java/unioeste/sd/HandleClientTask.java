@@ -2,18 +2,31 @@ package unioeste.sd;
 
 
 import unioeste.sd.connection.Connection;
+import unioeste.sd.connection.TcpConnection;
+import unioeste.sd.connection.UdpConnection;
 import unioeste.sd.structs.*;
 
 import java.io.*;
+import java.net.DatagramSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class HandleClientTask implements Runnable{
     private final Server server;
     private final Connection connection;
-    private OutgoinMessageManager outManager;
+    private final OutgoinMessageManager outManager;
 
     public HandleClientTask(Socket socket, Server server) throws IOException {
-        this.connection = new Connection(socket);
+        this.connection = new TcpConnection(socket);
+        this.outManager = new OutgoinMessageManager(server, connection);
+        this.server = server;
+    }
+
+    public HandleClientTask(SocketAddress socketAddress, Server server, ClientInfoMessage infoMessage, DatagramSocket socket) throws IOException {
+        this.connection = new UdpConnection(socketAddress, socket);
+        this.connection.addMessage(infoMessage);
         this.outManager = new OutgoinMessageManager(server, connection);
         this.server = server;
     }

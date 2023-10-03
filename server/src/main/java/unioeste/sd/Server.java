@@ -3,7 +3,9 @@ package unioeste.sd;
 import unioeste.sd.connection.Connection;
 import unioeste.sd.structs.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,28 +17,56 @@ public class Server implements Runnable{
     private User serverUser = new User(DEFAULT_SERVER_USERNAME);
     private final int port = 54000;
     private boolean isRunning = false;
+    private boolean useTCP;
     private Map<User, Connection> connections = new ConcurrentHashMap<>();
     private Map<User, OutgoinMessageManager> outManagers = new ConcurrentHashMap<>();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-    public static void start() {
-        new Thread(new Server()).start();
+    public Server(boolean useTCP) {
+        this.useTCP = useTCP;
+    }
+
+    public static void start(boolean useTCP) {
+        new Thread(new Server(useTCP)).start();
     }
     @Override
     public void run() {
         isRunning = true;
         try {
-            ServerSocket listenSocket = new ServerSocket(port);
-            printInfo();
+            if (!useTCP) {
+                DatagramSocket datagramSocket = new DatagramSocket(port);
+                printInfo();
 
-            while (isRunning) {
-                Socket newSocket = listenSocket.accept();
-                System.out.println("[DEBUG]> Novo cliente aceito!");
+                while (isRunning) {
+                    byte[] in = new byte[64000];
+                    DatagramPacket packet = new DatagramPacket(in, in.length);
+                    datagramSocket.receive(packet);
 
-                HandleClientTask newTask = new HandleClientTask(newSocket,this);
-                executorService.execute(newTask);
+                    ObjectInputStream inStream = new ObjectInputStream(new ByteArrayInputStream(packet.getData()));
+                    Message genMessage = (Message) inStream.readObject();
+
+                    if (genMessage instanceof ClientInfoMessage) {
+                        System.out.println("[DEBUG]> Novo cliente aceito!");
+
+                        HandleClientTask newTask = new HandleClientTask(packet.getSocketAddress(),this, (ClientInfoMessage) genMessage, datagramSocket);
+                        executorService.execute(newTask);
+                    } else {
+                        connections.get(genMessage.user).addMessage(genMessage);
+                    }
+                }
+            } else {
+                ServerSocket listenSocket = new ServerSocket(port);
+                printInfo();
+
+                while (isRunning) {
+                    Socket newSocket = listenSocket.accept();
+                    System.out.println("[DEBUG]> Novo cliente aceito!");
+
+                    HandleClientTask newTask = new HandleClientTask(newSocket,this);
+                    executorService.execute(newTask);
+                }
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
@@ -47,9 +77,6 @@ public class Server implements Runnable{
         if (connections.containsKey(dstUser)) {
             connections.get(dstUser).sendMessage(message);
         }
-    }
-    public void sendToAllInclusive(User sourceUser, MessageType type) {
-        sendToAll(sourceUser,type, true);
     }
 
     public void sendToAll(User sourceUser, MessageType type) {
@@ -115,6 +142,7 @@ public class Server implements Runnable{
     public void printInfo() {
         try {
             System.out.println("Server Initiated");
+            System.out.println("Protocol: " + (useTCP ? "TCP" : "UDP"));
             System.out.println("Server ip: " + InetAddress.getLocalHost().getHostAddress());
             System.out.println("Server port:" + port);
         } catch (UnknownHostException e) {

@@ -2,6 +2,7 @@ package unioeste.sd.dialogs;
 
 import imgui.ImGui;
 import imgui.flag.ImGuiWindowFlags;
+import imgui.type.ImBoolean;
 import imgui.type.ImInt;
 import imgui.type.ImString;
 import unioeste.sd.Client;
@@ -13,6 +14,7 @@ public class LoginDialog {
     private ImString serverIp = new ImString("127.0.0.1", 200);
     private ImInt serverPort = new ImInt(54000);
     private boolean showErrorMsg;
+    private ImBoolean usingTCP = new ImBoolean(true);
 
     public boolean draw(Client client) {
         boolean success = false;
@@ -21,6 +23,7 @@ public class LoginDialog {
         {
             ImGui.inputText("Server IP", serverIp);
             ImGui.inputInt("Server Port", serverPort);
+            ImGui.checkbox("Use TCP", usingTCP);
             ImGui.separator();
             ImGui.inputText("Username", username);
             ImGui.inputText("Name", name);

@@ -8,39 +8,18 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-public class Connection {
-    private final Socket socket;
-    private final ObjectOutputStream objOutStream;
-    private final ObjectInputStream objInStream;
+public abstract class Connection {
 
     public User user;
 
-    public Connection(Socket socket, User user) throws IOException {
-        this.user = user;
-        this.socket = socket;
-        objOutStream = new ObjectOutputStream(socket.getOutputStream());
-        objInStream = new ObjectInputStream(socket.getInputStream());
-    }
+    abstract public <T extends Message> T  readMessage() throws IOException, ClassNotFoundException;
 
-    public Connection(Socket socket) throws IOException {
-        this.socket = socket;
-        objOutStream = new ObjectOutputStream(socket.getOutputStream());
-        objInStream = new ObjectInputStream(socket.getInputStream());
-    }
+    abstract public void sendMessage(Message message) throws IOException;
 
-    public <T extends Message> T  readMessage() throws IOException, ClassNotFoundException {
-        return (T) objInStream.readObject();
-    }
+    abstract public void close() throws IOException;
 
-    public void sendMessage(Message message) throws IOException {
-        objOutStream.writeObject(message);
-    }
+    abstract public boolean isConnected();
+    public void addMessage(Message message) {
 
-    public void close() throws IOException {
-        socket.close();
-    }
-
-    public boolean isConnected() {
-        return socket.isConnected();
     }
 }
