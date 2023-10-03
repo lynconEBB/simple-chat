@@ -21,15 +21,16 @@ public class FileProgressWidget {
         this.status = Status.IN_PROGRESS;
     }
 
-    public void draw() {
-        ImGui.text(sourceUser.username);
-        ImGui.text(fileName);
+    public void draw(boolean isUpload) {
+        ImGui.setCursorPos(ImGui.getCursorPosX(), ImGui.getCursorPosY() + 10);
+        ImGui.text("User: " + sourceUser.username);
+        ImGui.text("File name: " + fileName);
         switch (status) {
             case SUCCESS -> {
-                ImGui.textColored(0,255,0,255,"Upload success!");
+                ImGui.textColored(0,255,0,255, (isUpload ? "Upload" : "Download") + " success!");
             }
             case FAILED -> {
-                ImGui.textColored(255,0,0,255,"Upload failed!");
+                ImGui.textColored(255,0,0,255,(isUpload ? "Upload" : "Download") + " failed!");
             }
             case IN_PROGRESS -> {
                 ImGui.text("Size:");
@@ -37,6 +38,7 @@ public class FileProgressWidget {
                 ImGui.text(getBytesFormated());
             }
         }
+        ImGui.separator();
     }
 
     private String getBytesFormated() {

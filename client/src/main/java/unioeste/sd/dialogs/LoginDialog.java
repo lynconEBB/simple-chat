@@ -14,7 +14,7 @@ public class LoginDialog {
     private ImString serverIp = new ImString("127.0.0.1", 200);
     private ImInt serverPort = new ImInt(54000);
     private boolean showErrorMsg;
-    private ImBoolean usingTCP = new ImBoolean(true);
+    private final ImBoolean usingTCP = new ImBoolean(true);
 
     public boolean draw(Client client) {
         boolean success = false;
@@ -33,7 +33,7 @@ public class LoginDialog {
                     (float) (ImGui.getIO().getDisplaySizeY() * 0.5) - ImGui.getWindowHeight()/2);
 
             if (ImGui.button("Login")) {
-                success = client.tryInitConnection(serverIp.get(), serverPort.get(), new User(username.get(), name.get()));
+                success = client.tryInitConnection(serverIp.get(), serverPort.get(), new User(username.get(), name.get()), usingTCP.get());
 
                 if (!success)
                     showErrorMsg = true;

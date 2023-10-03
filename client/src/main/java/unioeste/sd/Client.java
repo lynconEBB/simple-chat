@@ -1,10 +1,12 @@
 package unioeste.sd;
 
 import unioeste.sd.connection.Connection;
+import unioeste.sd.connection.TcpConnection;
+import unioeste.sd.connection.UdpConnection;
 import unioeste.sd.structs.*;
 
-import java.io.IOException;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
 
 public class Client {
     private Connection connection;
@@ -20,18 +22,63 @@ public class Client {
         this.outManager = new OutgoingMessagesManager(this, mainWindow);
     }
 
-    public boolean tryInitConnection(String ip, int port, User user) {
-        Socket socket;
+    static class ShutdownHookTask extends Thread {
+        private final Client client;
+        ShutdownHookTask(Client client) {
+            this.client = client;
+        }
+
+        @Override
+        public void run() {
+            try {
+                client.getConnection().sendMessage(new CloseMessage());
+            } catch (IOException ignored) { }
+
+            client.setRunning(false);
+        }
+    }
+
+    public boolean tryInitConnection(String ip, int port, User user, boolean useTCP) {
         try {
-            socket = new Socket(ip,port);
+            if (useTCP) {
+                Socket socket = new Socket(ip,port);
 
-            connection = new Connection(socket);
-            connection.user = user;
+                connection = new TcpConnection(socket);
+                connection.user = user;
 
-            connection.sendMessage(new ClientInfoMessage(user));
+                connection.sendMessage(new ClientInfoMessage(user));
 
-            ClientsListMessage listMsg = connection.readMessage();
-            mainWindow.handleNewClientsListMessage(listMsg);
+                ClientsListMessage listMsg = connection.readMessage();
+                mainWindow.handleNewClientsListMessage(listMsg);
+
+            } else {
+                System.out.println("Initing udp connection");
+                DatagramSocket socket = new DatagramSocket();
+
+                SocketAddress serverAddress = new InetSocketAddress(ip, port);
+                ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+                ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+                objectStream.writeObject(new ClientInfoMessage(user));
+                objectStream.close();
+
+                DatagramPacket packet = new DatagramPacket(byteStream.toByteArray(), byteStream.toByteArray().length, serverAddress);
+                socket.send(packet);
+                System.out.println("packet sent");
+
+                byte[] in = new byte[64000];
+                DatagramPacket receivPacket = new DatagramPacket(in, in.length);
+                socket.receive(receivPacket);
+                ObjectInputStream inStream = new ObjectInputStream(new ByteArrayInputStream(receivPacket.getData()));
+                Message firstMessage = (Message) inStream.readObject();
+
+                System.out.println("packet received");
+
+                connection = new UdpConnection(receivPacket.getSocketAddress(), socket);
+                connection.user = user;
+                connection.addMessage(firstMessage);
+
+                Runtime.getRuntime().addShutdownHook(new ShutdownHookTask(this));
+            }
 
             isRunning = true;
 

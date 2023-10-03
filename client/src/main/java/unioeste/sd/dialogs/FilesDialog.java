@@ -4,6 +4,7 @@ import imgui.ImGui;
 import imgui.extension.imguifiledialog.ImGuiFileDialog;
 import imgui.extension.imguifiledialog.callback.ImGuiFileDialogPaneFun;
 import imgui.extension.imguifiledialog.flag.ImGuiFileDialogFlags;
+import imgui.flag.ImGuiStyleVar;
 import unioeste.sd.Client;
 import unioeste.sd.SendFileTask;
 import unioeste.sd.structs.FilePacketMessage;
@@ -59,14 +60,16 @@ public class FilesDialog {
             ImGui.separator();
 
             ImGui.beginChild("upload",ImGui.getWindowWidth() * 0.5f,0);
+                ImGui.text("Uploads:");
                 for (FileProgressWidget widget : uploadedWidgets) {
-                    widget.draw();
+                    widget.draw(true);
                 }
             ImGui.endChild();
             ImGui.sameLine();
             ImGui.beginChild("download",ImGui.getWindowWidth() * 0.5f,0);
+                ImGui.text("Downloads:");
                 for (FileProgressWidget widget: downloadedWidgets.values()) {
-                    widget.draw();
+                    widget.draw(false);
                 }
             ImGui.endChild();
 

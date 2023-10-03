@@ -15,7 +15,6 @@ import unioeste.sd.structs.FilePacketMessage;
 import unioeste.sd.structs.User;
 import unioeste.sd.widgets.MessageWidget;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,9 +96,7 @@ public class Main extends Application {
                     chatMessage.user = client.getConnection().user;
                     client.outManager.sendMessage(chatMessage);
 
-                    if (chatMessage.text.charAt(0) != '/')
-                        messageWidgets.add(new MessageWidget(chatMessage));
-
+                    messageWidgets.add(new MessageWidget(chatMessage));
                     currentText.clear();
                 }
             }
@@ -110,8 +107,8 @@ public class Main extends Application {
             ImGui.begin("Online Users", ImGuiWindowFlags.HorizontalScrollbar);
             {
                 for (User user : usersOnline) {
-                    ImGui.text("Name: " + user.name);
                     ImGui.text("Username: " + user.username);
+                    ImGui.text("Name: " + user.name + (user.equals(client.getConnection().user) ? " (you)" : "") );
                     ImGui.separator();
                 }
             }
@@ -135,6 +132,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
+
         launch(new Main());
     }
 

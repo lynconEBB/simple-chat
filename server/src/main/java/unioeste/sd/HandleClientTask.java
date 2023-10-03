@@ -18,12 +18,14 @@ public class HandleClientTask implements Runnable{
     private final Connection connection;
     private final OutgoinMessageManager outManager;
 
+    // Used for TCP connections
     public HandleClientTask(Socket socket, Server server) throws IOException {
         this.connection = new TcpConnection(socket);
         this.outManager = new OutgoinMessageManager(server, connection);
         this.server = server;
     }
 
+    // Used for UDP connections
     public HandleClientTask(SocketAddress socketAddress, Server server, ClientInfoMessage infoMessage, DatagramSocket socket) throws IOException {
         this.connection = new UdpConnection(socketAddress, socket);
         this.connection.addMessage(infoMessage);
@@ -57,15 +59,7 @@ public class HandleClientTask implements Runnable{
 
             loop();
         } catch (IOException | ClassNotFoundException e) {
-            try {
-                connection.close();
-            } catch (IOException ignored) { }
-            if (server.getConnections().containsKey(connection.user)) {
-                server.getConnections().remove(connection.user);
-                server.sendToAll(server.getServerUser(), MessageType.CLIENTS_LIST_UPDATE);
-                server.sendToAll(server.getServerUser(), new ChatMessage("Usuario " + connection.user.username + " saiu do chat!"));
-            }
-            server.getOutManagers().remove(connection.user);
+            this.gracefulShutdown();
             throw new RuntimeException(e);
         }
     }
@@ -85,6 +79,22 @@ public class HandleClientTask implements Runnable{
             if (msg instanceof FilePacketMessage filePacket) {
                 server.sendToAll(connection.user, filePacket);
             }
+            if (msg instanceof CloseMessage) {
+                gracefulShutdown();
+            }
         }
+    }
+
+    private void gracefulShutdown() {
+        try {
+            connection.close();
+        } catch (IOException ignored) { }
+
+        if (server.getConnections().containsKey(connection.user)) {
+            server.getConnections().remove(connection.user);
+            server.sendToAll(server.getServerUser(), MessageType.CLIENTS_LIST_UPDATE);
+            server.sendToAll(server.getServerUser(), new ChatMessage("Usuario " + connection.user.username + " saiu do chat!"));
+        }
+        server.getOutManagers().remove(connection.user);
     }
 }

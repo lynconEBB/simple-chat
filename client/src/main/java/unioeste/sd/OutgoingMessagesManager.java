@@ -15,7 +15,7 @@ public class OutgoingMessagesManager implements Runnable{
     public OutgoingMessagesManager(Client client, Main mainWindow) {
         this.client = client;
         this.mainWindow = mainWindow;
-        this.fileMessages = new LinkedBlockingQueue<>(10);
+        this.fileMessages = new LinkedBlockingQueue<>();
         this.messageQueue = new LinkedBlockingQueue<>();
     }
 

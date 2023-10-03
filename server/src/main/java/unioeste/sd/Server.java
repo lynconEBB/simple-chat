@@ -47,11 +47,11 @@ public class Server implements Runnable{
 
                     if (genMessage instanceof ClientInfoMessage) {
                         System.out.println("[DEBUG]> Novo cliente aceito!");
-
-                        HandleClientTask newTask = new HandleClientTask(packet.getSocketAddress(),this, (ClientInfoMessage) genMessage, datagramSocket);
+                        DatagramSocket newSocket = new DatagramSocket();
+                        HandleClientTask newTask = new HandleClientTask(packet.getSocketAddress(),this, (ClientInfoMessage) genMessage, newSocket);
                         executorService.execute(newTask);
-                    } else {
-                        connections.get(genMessage.user).addMessage(genMessage);
+
+                        System.out.println("[DEBUG]> Novo cliente aceito! Bind na porta: " + newSocket.getLocalPort());
                     }
                 }
             } else {
@@ -84,7 +84,7 @@ public class Server implements Runnable{
     }
 
     public void sendToAll(User sourceUser, Message message) {
-        sendToAll(sourceUser,message, false);
+        sendToAll(sourceUser, message, false);
     }
 
     private void sendToAll(User sourceUser, MessageType type, boolean isInclusive) {
@@ -106,16 +106,16 @@ public class Server implements Runnable{
     }
 
     public void parseCommand(User user, String text) throws IOException {
-        text = text.substring(1);
-        String[] parts = text.split(" ");
+        String command = text.substring(0, text.indexOf(' '));
+        text = text.substring(text.indexOf(' ') + 1);
 
-        if (parts.length == 0)
-            return;
+        if (command.equalsIgnoreCase("/whisper")) {
+            String destUsername = text.substring(0, text.indexOf(' '));
+            text = text.substring(text.indexOf(' ') + 1);
 
-        if (parts[0].equals("whisper") && parts.length == 3) {
-            Connection dstUserConnection = connections.get(new User(parts[1]));
+            Connection dstUserConnection = connections.get(new User(destUsername));
             if (dstUserConnection != null) {
-                ChatMessage msg = new ChatMessage(parts[2]);
+                ChatMessage msg = new ChatMessage(text);
                 msg.isWhisper = true;
                 msg.user = user;
                 dstUserConnection.sendMessage(msg);

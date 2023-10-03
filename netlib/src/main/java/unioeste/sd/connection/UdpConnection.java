@@ -4,9 +4,7 @@ import unioeste.sd.structs.Message;
 import unioeste.sd.structs.User;
 
 import javax.xml.crypto.Data;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Socket;
@@ -28,8 +26,15 @@ public class UdpConnection extends Connection{ private final DatagramSocket sock
 
     @Override
     public <T extends Message> T readMessage() throws IOException, ClassNotFoundException {
-        while (incommingMessages.isEmpty()) { }
-        return (T) incommingMessages.remove();
+        if (!incommingMessages.isEmpty())
+            return (T) incommingMessages.remove();
+
+        byte[] in = new byte[64000];
+        DatagramPacket packet = new DatagramPacket(in, in.length);
+        socket.receive(packet);
+
+        ObjectInputStream inStream = new ObjectInputStream(new ByteArrayInputStream(packet.getData()));
+        return (T) inStream.readObject();
     }
 
     @Override
