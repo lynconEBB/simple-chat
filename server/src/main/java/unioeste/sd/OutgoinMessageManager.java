@@ -43,6 +43,10 @@ public class OutgoinMessageManager implements Runnable{
     }
 
     public void sendMessage(Message message) {
-        messageQueue.add(message);
+        if (message instanceof FilePacketMessage) {
+            fileMessages.add(message);
+        } else {
+            messageQueue.add(message);
+        }
     }
 }

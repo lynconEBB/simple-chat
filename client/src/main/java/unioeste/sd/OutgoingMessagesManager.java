@@ -1,5 +1,6 @@
 package unioeste.sd;
 
+import unioeste.sd.structs.FilePacketMessage;
 import unioeste.sd.structs.Message;
 
 import java.io.IOException;
@@ -24,7 +25,8 @@ public class OutgoingMessagesManager implements Runnable{
         try {
             while (client.isRunning()) {
                 if (!fileMessages.isEmpty()) {
-
+                    Message msg = fileMessages.remove();
+                    client.getConnection().sendMessage(msg);
                 }
                 if (!messageQueue.isEmpty()) {
                     Message msg = messageQueue.remove();
@@ -37,6 +39,10 @@ public class OutgoingMessagesManager implements Runnable{
     }
 
     public void sendMessage(Message message) {
-        messageQueue.add(message);
+        if (message instanceof FilePacketMessage) {
+            fileMessages.add(message);
+        } else {
+            messageQueue.add(message);
+        }
     }
 }

@@ -5,6 +5,8 @@ import imgui.ImVec2;
 import unioeste.sd.structs.ChatMessage;
 import unioeste.sd.utils.ImGuiUtils;
 
+import java.time.format.DateTimeFormatter;
+
 public class MessageWidget {
     private ChatMessage chatMessage;
 
@@ -16,7 +18,7 @@ public class MessageWidget {
         ImGui.setCursorPosY(ImGui.getCursorPosY() + 15);
         ImGui.text(chatMessage.user.username);
         ImGui.sameLine();
-        ImGui.text("18:09:43");
+        ImGui.text(chatMessage.time.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         ImGui.sameLine();
         ImGui.text(chatMessage.isWhisper ? "whispers:": "says:");
 
