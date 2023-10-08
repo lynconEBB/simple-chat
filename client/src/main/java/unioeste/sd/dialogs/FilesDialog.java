@@ -4,14 +4,13 @@ import imgui.ImGui;
 import imgui.extension.imguifiledialog.ImGuiFileDialog;
 import imgui.extension.imguifiledialog.callback.ImGuiFileDialogPaneFun;
 import imgui.extension.imguifiledialog.flag.ImGuiFileDialogFlags;
-import imgui.flag.ImGuiStyleVar;
 import unioeste.sd.Client;
 import unioeste.sd.SendFileTask;
+import unioeste.sd.structs.AvailableFileMessage;
 import unioeste.sd.structs.FilePacketMessage;
 import unioeste.sd.widgets.FileProgressWidget;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,20 +24,22 @@ public class FilesDialog {
         @Override
         public void paneFun(String filter, long userDatas, boolean canContinue) { }
     };
+
     private String currentPath;
+    private final List<FileProgressWidget> uploadedWidgets;
+    private final Map<String, FileProgressWidget> downloadedWidgets;
+    private final Map<String, FileOutputStream> downloadedFiles;
+    private final Client client;
 
-    private List<FileProgressWidget> uploadedWidgets;
-    private Map<String, FileProgressWidget> downloadedWidgets;
-    private Map<String, FileOutputStream> downloadedFiles;
-
-    public FilesDialog() {
+    public FilesDialog(Client client) {
+        this.client = client;
         this.currentPath = "...";
         uploadedWidgets = new ArrayList<>();
         downloadedWidgets = new ConcurrentHashMap<>();
         downloadedFiles = new ConcurrentHashMap<>();
     }
 
-    public void draw(Client client) {
+    public void draw() {
         ImGui.begin("Files");
         {
             if (ImGui.button("Select file")) {
@@ -50,7 +51,7 @@ public class FilesDialog {
             if (ImGui.button("Send file")) {
                 File file = new File(currentPath);
                 if (file.exists() && !file.isDirectory()) {
-                    FileProgressWidget fileWidget = new FileProgressWidget(client.getConnection().user, file.getName());
+                    FileProgressWidget fileWidget = new FileProgressWidget(client.getConnection().user, file.getName(),client);
                     uploadedWidgets.add(fileWidget);
                     SendFileTask.initTask(file, client, fileWidget);
                 }
@@ -83,17 +84,19 @@ public class FilesDialog {
         ImGui.end();
     }
 
+    public void addAvailableFile(AvailableFileMessage message) {
+        FileProgressWidget newWidget = new FileProgressWidget(message.user, message.filename,client);
+        downloadedWidgets.put(message.filename, newWidget);
+    }
+
     public void processPacket(FilePacketMessage message) throws IOException {
+        FileProgressWidget widget = downloadedWidgets.get(message.fileName);
         FileOutputStream fileOutputStream;
-        FileProgressWidget widget;
 
         if (!downloadedFiles.containsKey(message.fileName)) {
              fileOutputStream = new FileOutputStream(desktopPath + message.fileName);
-             widget = new FileProgressWidget(message.user, message.fileName);
-             downloadedWidgets.put(message.fileName, widget);
              downloadedFiles.put(message.fileName, fileOutputStream);
         } else {
-            widget = downloadedWidgets.get(message.fileName);
             fileOutputStream = downloadedFiles.get(message.fileName);
         }
 
@@ -105,8 +108,5 @@ public class FilesDialog {
             widget.incrementBytesReceived(message.bytes.length);
             fileOutputStream.write(message.bytes);
         }
-    }
-    public Map<String, FileOutputStream> getDownloadedFiles() {
-        return downloadedFiles;
     }
 }

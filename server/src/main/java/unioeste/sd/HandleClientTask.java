@@ -21,7 +21,7 @@ public class HandleClientTask implements Runnable{
     // Used for TCP connections
     public HandleClientTask(Socket socket, Server server) throws IOException {
         this.connection = new TcpConnection(socket);
-        this.outManager = new OutgoinMessageManager(server, connection);
+        this.outManager = new OutgoinMessageManager(connection);
         this.server = server;
     }
 
@@ -29,7 +29,7 @@ public class HandleClientTask implements Runnable{
     public HandleClientTask(SocketAddress socketAddress, Server server, ClientInfoMessage infoMessage, DatagramSocket socket) throws IOException {
         this.connection = new UdpConnection(socketAddress, socket);
         this.connection.addMessage(infoMessage);
-        this.outManager = new OutgoinMessageManager(server, connection);
+        this.outManager = new OutgoinMessageManager(connection);
         this.server = server;
     }
 
@@ -68,8 +68,7 @@ public class HandleClientTask implements Runnable{
         while (connection.isConnected()) {
             Message msg = connection.readMessage();
 
-            if (msg instanceof ChatMessage) {
-                ChatMessage chatMessage = (ChatMessage) msg;
+            if (msg instanceof ChatMessage chatMessage) {
                 if (chatMessage.text.charAt(0) == '/') {
                     server.parseCommand(connection.user, chatMessage.text);
                 } else {
@@ -77,7 +76,11 @@ public class HandleClientTask implements Runnable{
                 }
             }
             if (msg instanceof FilePacketMessage filePacket) {
-                server.sendToAll(connection.user, filePacket);
+                server.handleFilePacket(filePacket);
+            }
+            if (msg instanceof RequestFileMessage requestMessage) {
+                System.out.println("Request message");
+                server.handleFileRequest(requestMessage);
             }
             if (msg instanceof CloseMessage) {
                 gracefulShutdown();

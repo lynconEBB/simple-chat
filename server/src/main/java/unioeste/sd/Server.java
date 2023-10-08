@@ -15,6 +15,8 @@ import java.util.concurrent.Executors;
 public class Server implements Runnable{
     private static final String DEFAULT_SERVER_USERNAME = "SERVER";
     private User serverUser = new User(DEFAULT_SERVER_USERNAME);
+
+    private FileManager fileManager;
     private final int port = 54000;
     private boolean isRunning = false;
     private boolean useTCP;
@@ -24,11 +26,13 @@ public class Server implements Runnable{
 
     public Server(boolean useTCP) {
         this.useTCP = useTCP;
+        this.fileManager = FileManager.start(this);
     }
 
     public static void start(boolean useTCP) {
         new Thread(new Server(useTCP)).start();
     }
+
     @Override
     public void run() {
         isRunning = true;
@@ -46,7 +50,6 @@ public class Server implements Runnable{
                     Message genMessage = (Message) inStream.readObject();
 
                     if (genMessage instanceof ClientInfoMessage) {
-                        System.out.println("[DEBUG]> Novo cliente aceito!");
                         DatagramSocket newSocket = new DatagramSocket();
                         HandleClientTask newTask = new HandleClientTask(packet.getSocketAddress(),this, (ClientInfoMessage) genMessage, newSocket);
                         executorService.execute(newTask);
@@ -137,6 +140,13 @@ public class Server implements Runnable{
 
     public Map<User, OutgoinMessageManager> getOutManagers() {
         return outManagers;
+    }
+
+    public void handleFilePacket(FilePacketMessage message) {
+       fileManager.addMessage(message);
+    }
+    public void handleFileRequest(RequestFileMessage message) {
+        fileManager.startFileSend(message);
     }
 
     public void printInfo() {

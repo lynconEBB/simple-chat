@@ -20,16 +20,16 @@ public class IncomingMessagesManager implements Runnable{
                 Message msg = client.getConnection().readMessage();
 
                 if (msg instanceof ChatMessage) {
-                    System.out.println("Chat message");
                     mainWindow.handleNewChatMessage((ChatMessage) msg);
                 }
                 else if (msg instanceof ClientsListMessage) {
-                    System.out.println("List message");
                     mainWindow.handleNewClientsListMessage((ClientsListMessage) msg);
                 }
                 else if (msg instanceof FilePacketMessage) {
-                    System.out.println("File message");
                     mainWindow.handleFilePacketMessage((FilePacketMessage) msg);
+                }
+                else if (msg instanceof AvailableFileMessage) {
+                    mainWindow.handleAvailableFileMessage((AvailableFileMessage) msg);
                 }
             }
         } catch (IOException | ClassNotFoundException e) {

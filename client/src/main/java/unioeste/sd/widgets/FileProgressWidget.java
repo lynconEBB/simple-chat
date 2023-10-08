@@ -1,24 +1,31 @@
 package unioeste.sd.widgets;
 
 import imgui.ImGui;
+import unioeste.sd.Client;
+import unioeste.sd.structs.RequestFileMessage;
 import unioeste.sd.structs.User;
 
+import java.io.IOException;
+
 public class FileProgressWidget {
-    private User sourceUser;
-    private String fileName;
-    private long bytesReceived;
     public enum Status {
+        IDLE,
+        IN_PROGRESS,
         SUCCESS,
-        FAILED,
-        IN_PROGRESS
+        FAILED
     }
+    private final Client client;
+    private final User sourceUser;
+    private final String fileName;
+    private long bytesReceived;
     private Status status;
 
-    public FileProgressWidget(User sourceUser, String fileName) {
+    public FileProgressWidget(User sourceUser, String fileName, Client client) {
         this.sourceUser = sourceUser;
+        this.client = client;
         this.fileName = fileName;
         this.bytesReceived = 0;
-        this.status = Status.IN_PROGRESS;
+        this.status = Status.IDLE;
     }
 
     public void draw(boolean isUpload) {
@@ -37,6 +44,13 @@ public class FileProgressWidget {
                 ImGui.sameLine();
                 ImGui.text(getBytesFormated());
             }
+        }
+        if (!isUpload && status == Status.IDLE) {
+           if (ImGui.button("Download")) {
+                status = Status.IN_PROGRESS;
+               RequestFileMessage requestMessage = new RequestFileMessage(client.getConnection().user, fileName);
+               client.outManager.sendMessage(requestMessage);
+           }
         }
         ImGui.separator();
     }

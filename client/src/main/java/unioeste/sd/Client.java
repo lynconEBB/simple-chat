@@ -9,18 +9,6 @@ import java.io.*;
 import java.net.*;
 
 public class Client {
-    private Connection connection;
-    private Main mainWindow;
-    private volatile boolean isRunning = false;
-
-    public IncomingMessagesManager inManager;
-    public OutgoingMessagesManager outManager;
-
-    public Client(Main mainWindow) {
-        this.mainWindow = mainWindow;
-        this.inManager = new IncomingMessagesManager(this, mainWindow);
-        this.outManager = new OutgoingMessagesManager(this, mainWindow);
-    }
 
     static class ShutdownHookTask extends Thread {
         private final Client client;
@@ -38,7 +26,20 @@ public class Client {
         }
     }
 
-    public boolean tryInitConnection(String ip, int port, User user, boolean useTCP) {
+    private Connection connection;
+    private Main mainWindow;
+    private volatile boolean isRunning = false;
+
+    public IncomingMessagesManager inManager;
+    public OutgoingMessagesManager outManager;
+
+    public Client(Main mainWindow) {
+        this.mainWindow = mainWindow;
+        this.inManager = new IncomingMessagesManager(this, mainWindow);
+        this.outManager = new OutgoingMessagesManager(this, mainWindow);
+    }
+
+    public boolean initConnection(String ip, int port, User user, boolean useTCP) {
         try {
             if (useTCP) {
                 Socket socket = new Socket(ip,port);

@@ -33,7 +33,7 @@ public class LoginDialog {
                     (float) (ImGui.getIO().getDisplaySizeY() * 0.5) - ImGui.getWindowHeight()/2);
 
             if (ImGui.button("Login")) {
-                success = client.tryInitConnection(serverIp.get(), serverPort.get(), new User(username.get(), name.get()), usingTCP.get());
+                success = client.initConnection(serverIp.get(), serverPort.get(), new User(username.get(), name.get()), usingTCP.get());
 
                 if (!success)
                     showErrorMsg = true;

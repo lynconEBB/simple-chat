@@ -6,28 +6,18 @@ import unioeste.sd.structs.Message;
 
 import java.io.IOException;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
 public class OutgoinMessageManager implements Runnable{
-    private final Server server;
     private final Connection connection;
-    private Queue<Message> messageQueue;
+    private BlockingQueue<Message> messageQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<Message> fileMessages = new LinkedBlockingQueue<>();
 
-    public OutgoinMessageManager(Server server, Connection connection) {
-        this.server = server;
+    public OutgoinMessageManager(Connection connection) {
         this.connection = connection;
-        this.messageQueue = new PriorityBlockingQueue<>(50, (Message m1, Message m2) -> {
-            if (m1 instanceof FilePacketMessage && m2 instanceof FilePacketMessage) {
-                return 0;
-            } else if (m1 instanceof FilePacketMessage) {
-                return -1;
-            } else if (m2 instanceof FilePacketMessage){
-                return 1;
-            } else {
-                return 0;
-            }
-        });
-
     }
 
     public void start() {
@@ -40,6 +30,10 @@ public class OutgoinMessageManager implements Runnable{
             while (connection.isConnected()) {
                 if (!messageQueue.isEmpty()) {
                     Message msg = messageQueue.remove();
+                    connection.sendMessage(msg);
+                }
+                if (!fileMessages.isEmpty()) {
+                    Message msg = fileMessages.remove();
                     connection.sendMessage(msg);
                 }
             }

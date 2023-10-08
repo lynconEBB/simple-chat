@@ -49,6 +49,7 @@ public class SendFileTask implements Runnable{
             }
 
         } catch (IOException e) {
+            widget.setStatus(FileProgressWidget.Status.FAILED);
             throw new RuntimeException(e);
         }
     }

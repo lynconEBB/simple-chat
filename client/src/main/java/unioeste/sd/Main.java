@@ -9,10 +9,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImString;
 import unioeste.sd.dialogs.FilesDialog;
 import unioeste.sd.dialogs.LoginDialog;
-import unioeste.sd.structs.ChatMessage;
-import unioeste.sd.structs.ClientsListMessage;
-import unioeste.sd.structs.FilePacketMessage;
-import unioeste.sd.structs.User;
+import unioeste.sd.structs.*;
 import unioeste.sd.widgets.MessageWidget;
 
 import java.io.IOException;
@@ -22,10 +19,8 @@ import java.util.List;
 public class Main extends Application {
 
     private ImString currentText = new ImString();
-
     private ImBoolean showLoginWindow = new ImBoolean(true);
     private final LoginDialog loginDialog;
-
     private final FilesDialog filesDialog;
     private final List<MessageWidget> messageWidgets;
     private List<User> usersOnline;
@@ -37,19 +32,7 @@ public class Main extends Application {
         loginDialog = new LoginDialog();
         usersOnline = new ArrayList<>();
         messageWidgets = new ArrayList<>();
-        filesDialog = new FilesDialog();
-    }
-
-    @Override
-    protected void initImGui(Configuration config) {
-        super.initImGui(config);
-        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
-    }
-
-    @Override
-    protected void configure(Configuration config) {
-        config.setTitle("Simple Chat");
-        config.setFullScreen(true);
+        filesDialog = new FilesDialog(client);
     }
 
     @Override
@@ -102,7 +85,7 @@ public class Main extends Application {
             }
             ImGui.end();
 
-            filesDialog.draw(client);
+            filesDialog.draw();
 
             ImGui.begin("Online Users", ImGuiWindowFlags.HorizontalScrollbar);
             {
@@ -130,10 +113,22 @@ public class Main extends Application {
             throw new RuntimeException(e);
         }
     }
-
-    public static void main(String[] args) {
-
-        launch(new Main());
+    public void handleAvailableFileMessage(AvailableFileMessage msg) {
+       filesDialog.addAvailableFile(msg);
     }
 
+    public static void main(String[] args) {
+        launch(new Main());
+    }
+    @Override
+    protected void initImGui(Configuration config) {
+        super.initImGui(config);
+        ImGui.getIO().addConfigFlags(ImGuiConfigFlags.DockingEnable);
+    }
+
+    @Override
+    protected void configure(Configuration config) {
+        config.setTitle("Simple Chat");
+        config.setFullScreen(true);
+    }
 }
