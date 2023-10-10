@@ -24,7 +24,6 @@ public class Main extends Application {
     private final FilesDialog filesDialog;
     private final List<MessageWidget> messageWidgets;
     private List<User> usersOnline;
-
     private Client client;
 
     public Main() {
@@ -90,8 +89,8 @@ public class Main extends Application {
             ImGui.begin("Online Users", ImGuiWindowFlags.HorizontalScrollbar);
             {
                 for (User user : usersOnline) {
-                    ImGui.text("Username: " + user.username);
-                    ImGui.text("Name: " + user.name + (user.equals(client.getConnection().user) ? " (you)" : "") );
+                    ImGui.text("Username: " + user.username + (user.equals(client.getConnection().user) ? " (you)" : "") );
+                    ImGui.text("Name: " + user.name);
                     ImGui.separator();
                 }
             }
