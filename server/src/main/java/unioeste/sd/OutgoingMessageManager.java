@@ -5,18 +5,15 @@ import unioeste.sd.structs.FilePacketMessage;
 import unioeste.sd.structs.Message;
 
 import java.io.IOException;
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 
-public class OutgoinMessageManager implements Runnable{
+public class OutgoingMessageManager implements Runnable{
     private final Connection connection;
     private BlockingQueue<Message> messageQueue = new LinkedBlockingQueue<>();
     private BlockingQueue<Message> fileMessages = new LinkedBlockingQueue<>();
 
-    public OutgoinMessageManager(Connection connection) {
+    public OutgoingMessageManager(Connection connection) {
         this.connection = connection;
     }
 

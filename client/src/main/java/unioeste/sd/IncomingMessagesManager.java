@@ -6,9 +6,9 @@ import java.io.IOException;
 
 public class IncomingMessagesManager implements Runnable{
     private Client client;
-    private Main mainWindow;
+    private MainWindow mainWindow;
 
-    public IncomingMessagesManager(Client client, Main mainWindow) {
+    public IncomingMessagesManager(Client client, MainWindow mainWindow) {
         this.client = client;
         this.mainWindow = mainWindow;
     }

@@ -13,7 +13,6 @@ public class TcpConnection extends Connection{
     private final ObjectOutputStream objOutStream;
     private final ObjectInputStream objInStream;
 
-    public User user;
 
     public TcpConnection(Socket socket) throws IOException {
         this.socket = socket;

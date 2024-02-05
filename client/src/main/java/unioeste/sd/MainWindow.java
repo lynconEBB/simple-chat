@@ -9,6 +9,7 @@ import imgui.type.ImBoolean;
 import imgui.type.ImString;
 import unioeste.sd.dialogs.FilesDialog;
 import unioeste.sd.dialogs.LoginDialog;
+import unioeste.sd.dialogs.SecretDialog;
 import unioeste.sd.structs.*;
 import unioeste.sd.widgets.MessageWidget;
 
@@ -16,22 +17,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Main extends Application {
+public class MainWindow extends Application {
 
     private ImString currentText = new ImString();
     private ImBoolean showLoginWindow = new ImBoolean(true);
+    private ImBoolean showSecretWindow = new ImBoolean(false);
     private final LoginDialog loginDialog;
     private final FilesDialog filesDialog;
+    private final SecretDialog secretDialog;
     private final List<MessageWidget> messageWidgets;
     private List<User> usersOnline;
     private Client client;
 
-    public Main() {
-        client = new Client(this);
-        loginDialog = new LoginDialog();
+    public MainWindow() {
         usersOnline = new ArrayList<>();
         messageWidgets = new ArrayList<>();
+        client = new Client(this);
+        loginDialog = new LoginDialog();
         filesDialog = new FilesDialog(client);
+        secretDialog = new SecretDialog();
     }
 
     @Override
@@ -89,12 +93,26 @@ public class Main extends Application {
             ImGui.begin("Online Users", ImGuiWindowFlags.HorizontalScrollbar);
             {
                 for (User user : usersOnline) {
+                    float topY = ImGui.getCursorPosY();
                     ImGui.text("Username: " + user.username + (user.equals(client.getConnection().user) ? " (you)" : "") );
                     ImGui.text("Name: " + user.name);
                     ImGui.separator();
+
+                    ImVec2 cursorPos = ImGui.getCursorPos();
+                    ImGui.getWindowWidth();
+                    ImGui.setCursorPos(ImGui.getWindowWidth() - (ImGui.calcTextSize("secret").x + 20), topY);
+                    if (ImGui.button("secret")){
+                        secretDialog.setCurrentUser(user);
+                        showSecretWindow.set(true);
+                    }
+                    ImGui.setCursorPos(cursorPos.x, cursorPos.y);
                 }
             }
             ImGui.end();
+
+            if (showSecretWindow.get()) {
+                secretDialog.draw(showSecretWindow, client);
+            }
         }
 
     }
@@ -117,7 +135,7 @@ public class Main extends Application {
     }
 
     public static void main(String[] args) {
-        launch(new Main());
+        launch(new MainWindow());
     }
     @Override
     protected void initImGui(Configuration config) {

@@ -3,10 +3,13 @@ package unioeste.sd;
 import unioeste.sd.connection.Connection;
 import unioeste.sd.structs.*;
 
+import javax.crypto.SecretKey;
+import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.*;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -21,7 +24,7 @@ public class Server implements Runnable{
     private boolean isRunning = false;
     private boolean useTCP;
     private Map<User, Connection> connections = new ConcurrentHashMap<>();
-    private Map<User, OutgoinMessageManager> outManagers = new ConcurrentHashMap<>();
+    private Map<User, OutgoingMessageManager> outManagers = new ConcurrentHashMap<>();
     private ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     public Server(boolean useTCP) {
@@ -74,7 +77,7 @@ public class Server implements Runnable{
         }
     }
 
-    public void sendTo(User sourceUser, User dstUser,  ChatMessage message ) throws IOException {
+    public void sendTo(User sourceUser, User dstUser, ChatMessage message ) throws IOException {
         message.user = sourceUser;
         message.isWhisper = true;
         if (connections.containsKey(dstUser)) {
@@ -91,11 +94,18 @@ public class Server implements Runnable{
     }
 
     private void sendToAll(User sourceUser, MessageType type, boolean isInclusive) {
-        Message messageToBeSent = switch (type) {
-            case CLIENTS_LIST_UPDATE -> new ClientsListMessage(sourceUser, connections.keySet().stream().toList());
+        switch (type) {
+            case CLIENTS_LIST_UPDATE -> {
+                outManagers.forEach(((user, outManager) -> {
+                    List<User> usersInfo = connections.keySet().stream().toList();
+                    for (User u : usersInfo) {
+                        if (u != user)
+                            u.key = null;
+                    }
+                    outManager.sendMessage(new ClientsListMessage(sourceUser, usersInfo));
+                }));
+            }
         };
-
-        sendToAll(sourceUser, messageToBeSent, isInclusive);
     }
 
     private void sendToAll(User sourceUser, Message message, boolean isInclusive) {
@@ -138,7 +148,7 @@ public class Server implements Runnable{
         return serverUser;
     }
 
-    public Map<User, OutgoinMessageManager> getOutManagers() {
+    public Map<User, OutgoingMessageManager> getOutManagers() {
         return outManagers;
     }
 
@@ -147,6 +157,13 @@ public class Server implements Runnable{
     }
     public void handleFileRequest(RequestFileMessage message) {
         fileManager.startFileSend(message);
+    }
+    public void handleClientUpdateMessage(ClientInfoMessage infoMessage) {
+        if (infoMessage.user == infoMessage.userInfo && connections.containsKey(infoMessage.userInfo)) {
+            Connection connection = connections.get(infoMessage.userInfo);
+            connections.remove(infoMessage.user);
+            connections.put(infoMessage.userInfo, connection);
+        }
     }
 
     public void printInfo() {
@@ -160,4 +177,5 @@ public class Server implements Runnable{
             throw new RuntimeException(e);
         }
     }
+
 }

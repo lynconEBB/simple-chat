@@ -11,7 +11,7 @@ public class SendFileTask implements Runnable {
     private static final int MAX_PACKET_SIZE = 1024;
     private final String filename;
     private final FileManager fileManager;
-    private final OutgoinMessageManager outManager;
+    private final OutgoingMessageManager outManager;
 
     public SendFileTask(String filename, User sourceUser, FileManager fileManager) {
         this.filename = filename;

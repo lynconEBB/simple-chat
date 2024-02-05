@@ -27,13 +27,13 @@ public class Client {
     }
 
     private Connection connection;
-    private Main mainWindow;
+    private MainWindow mainWindow;
     private volatile boolean isRunning = false;
 
     public IncomingMessagesManager inManager;
     public OutgoingMessagesManager outManager;
 
-    public Client(Main mainWindow) {
+    public Client(MainWindow mainWindow) {
         this.mainWindow = mainWindow;
         this.inManager = new IncomingMessagesManager(this, mainWindow);
         this.outManager = new OutgoingMessagesManager(this, mainWindow);
@@ -64,15 +64,12 @@ public class Client {
 
                 DatagramPacket packet = new DatagramPacket(byteStream.toByteArray(), byteStream.toByteArray().length, serverAddress);
                 socket.send(packet);
-                System.out.println("packet sent");
 
                 byte[] in = new byte[64000];
                 DatagramPacket receivPacket = new DatagramPacket(in, in.length);
                 socket.receive(receivPacket);
                 ObjectInputStream inStream = new ObjectInputStream(new ByteArrayInputStream(receivPacket.getData()));
                 Message firstMessage = (Message) inStream.readObject();
-
-                System.out.println("packet received");
 
                 connection = new UdpConnection(receivPacket.getSocketAddress(), socket);
                 connection.user = user;

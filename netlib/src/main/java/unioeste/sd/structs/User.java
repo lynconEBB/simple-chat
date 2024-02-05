@@ -1,5 +1,6 @@
 package unioeste.sd.structs;
 
+import javax.crypto.SecretKey;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -7,6 +8,7 @@ public class User implements Serializable {
     public String username;
 
     public String name;
+    public SecretKey key;
 
     public User(String username) {
         this.username = username;

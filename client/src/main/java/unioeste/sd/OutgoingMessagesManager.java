@@ -9,11 +9,11 @@ import java.util.concurrent.*;
 
 public class OutgoingMessagesManager implements Runnable{
     private Client client;
-    private Main mainWindow;
+    private MainWindow mainWindow;
     private Queue<Message> messageQueue;
     private Queue<Message> fileMessages;
 
-    public OutgoingMessagesManager(Client client, Main mainWindow) {
+    public OutgoingMessagesManager(Client client, MainWindow mainWindow) {
         this.client = client;
         this.mainWindow = mainWindow;
         this.fileMessages = new LinkedBlockingQueue<>();
