@@ -8,6 +8,7 @@ import unioeste.sd.Client;
 import unioeste.sd.structs.ClientInfoMessage;
 import unioeste.sd.structs.User;
 
+import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 import java.security.InvalidKeyException;
@@ -36,6 +37,17 @@ public class SecretDialog {
             secrets.put(currentUser, new ImString(20));
         }
     }
+    public SecretKey getSecretKeyByUser(User user) {
+        if (secrets.containsKey(user)) {
+            try {
+                return keyFactory.generateSecret(new DESKeySpec(secrets.get(user).get().getBytes()));
+            } catch (InvalidKeySpecException | InvalidKeyException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return null;
+    }
+
 
     public void draw(ImBoolean showWindow, Client client) {
 
@@ -54,11 +66,13 @@ public class SecretDialog {
                     showError = true;
                 }
                 else {
-                    if (currentUser == client.getConnection().user) {
+                    System.out.println(currentUser.username);
+                    if (currentUser.equals(client.getConnection().user)) {
                         User user = new User(client.getConnection().user.username, client.getConnection().user.name);
                         try {
                             user.key = keyFactory.generateSecret(new DESKeySpec(secrets.get(currentUser).get().getBytes()));
                             client.outManager.sendMessage(new ClientInfoMessage(user));
+                            System.out.println("Mandou");
                         } catch (InvalidKeySpecException | InvalidKeyException ignored) {}
                     }
 

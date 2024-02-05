@@ -1,22 +1,30 @@
 package unioeste.sd;
 
-import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
+import javax.crypto.*;
 import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.DESedeKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
 public class Test {
-    public static void main(String[] args) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-        String password = "abcd1234";
-        byte[] bytes = password.getBytes();
-        DESKeySpec keySpec = new DESKeySpec(bytes);
+    public static void main(String[] args) throws InvalidKeyException, InvalidKeySpecException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException {
+        Cipher des = Cipher.getInstance("DES");
+
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
-        SecretKey key = keyFactory.generateSecret(keySpec);
-        System.out.println(new String(key.getEncoded()));
-		Cipher cipher = Cipher.getInstance("DES");
+        String a = "12345678";
+        SecretKey secretKey = keyFactory.generateSecret(new DESKeySpec(a.getBytes()));
+
+        des.init(Cipher.ENCRYPT_MODE, secretKey);
+
+        byte[] bytes = des.doFinal("OLAMUNDO AAAA".getBytes());
+
+        String b = "5642345678";
+        SecretKey wrongkey = keyFactory.generateSecret(new DESKeySpec(b.getBytes()));
+
+        Cipher des2 = Cipher.getInstance("DES");
+        des2.init(Cipher.DECRYPT_MODE, wrongkey);
+        byte[] bytes1 = des2.doFinal(bytes);
+        System.out.println(new String(bytes1));
     }
 }

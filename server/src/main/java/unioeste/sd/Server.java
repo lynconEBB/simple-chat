@@ -3,12 +3,15 @@ package unioeste.sd;
 import unioeste.sd.connection.Connection;
 import unioeste.sd.structs.*;
 
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -118,27 +121,6 @@ public class Server implements Runnable{
         });
     }
 
-    public void parseCommand(User user, String text) throws IOException {
-        String command = text.substring(0, text.indexOf(' '));
-        text = text.substring(text.indexOf(' ') + 1);
-
-        if (command.equalsIgnoreCase("/whisper")) {
-            String destUsername = text.substring(0, text.indexOf(' '));
-            text = text.substring(text.indexOf(' ') + 1);
-
-            Connection dstUserConnection = connections.get(new User(destUsername));
-            if (dstUserConnection != null) {
-                ChatMessage msg = new ChatMessage(text);
-                msg.isWhisper = true;
-                msg.user = user;
-                dstUserConnection.sendMessage(msg);
-            } else {
-                sendTo(serverUser, user, new ChatMessage("User not found!"));
-            }
-        } else {
-            sendTo(serverUser, user, new ChatMessage("Command incorrect!"));
-        }
-    }
 
     public Map<User, Connection> getConnections() {
         return connections;
@@ -152,6 +134,41 @@ public class Server implements Runnable{
         return outManagers;
     }
 
+    public void parseCommand(User user, String text) throws IOException {
+        String command = text.substring(0, text.indexOf(' '));
+        text = text.substring(text.indexOf(' ') + 1);
+
+        if (command.equalsIgnoreCase("/whisper")) {
+            String destUsername = text.substring(0, text.indexOf(' '));
+            text = text.substring(text.indexOf(' ') + 1);
+
+            Connection dstUserConnection = connections.get(new User(destUsername));
+
+            if (dstUserConnection != null) {
+                if (dstUserConnection.user.key != null) {
+                    try {
+                        byte[] encrypted = Base64.getDecoder().decode(text);
+                        Cipher cipher = Cipher.getInstance("DES");
+                        cipher.init(Cipher.DECRYPT_MODE, dstUserConnection.user.key);
+                        byte[] bytes = cipher.doFinal(encrypted);
+                        text = new String(bytes);
+                    } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                             IllegalBlockSizeException | BadPaddingException | IllegalArgumentException e) {
+                        sendTo(serverUser, user, new ChatMessage("Wrong key used, configure the user key in the secret button!"));
+                        return;
+                    }
+                }
+                ChatMessage msg = new ChatMessage(text);
+                msg.isWhisper = true;
+                msg.user = user;
+                dstUserConnection.sendMessage(msg);
+            } else {
+                sendTo(serverUser, user, new ChatMessage("User not found!"));
+            }
+        } else {
+            sendTo(serverUser, user, new ChatMessage("Command incorrect!"));
+        }
+    }
     public void handleFilePacket(FilePacketMessage message) {
        fileManager.addMessage(message);
     }
@@ -159,9 +176,10 @@ public class Server implements Runnable{
         fileManager.startFileSend(message);
     }
     public void handleClientUpdateMessage(ClientInfoMessage infoMessage) {
-        if (infoMessage.user == infoMessage.userInfo && connections.containsKey(infoMessage.userInfo)) {
+        if (infoMessage.user.equals(infoMessage.userInfo) && connections.containsKey(infoMessage.userInfo)) {
             Connection connection = connections.get(infoMessage.userInfo);
             connections.remove(infoMessage.user);
+            connection.user = infoMessage.userInfo;
             connections.put(infoMessage.userInfo, connection);
         }
     }

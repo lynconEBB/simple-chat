@@ -3,9 +3,10 @@ package unioeste.sd;
 
 public class Main {
     private static void printErrorAndExit() {
-
+        System.err.println("Invalid arguments!");
         System.exit(-1);
     }
+
     public static void main(String[] args) {
         boolean useTCP = true;
         if (args.length >= 2) {

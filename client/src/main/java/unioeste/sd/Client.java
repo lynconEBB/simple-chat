@@ -1,14 +1,21 @@
 package unioeste.sd;
 
+import imgui.type.ImString;
+import org.apache.commons.lang3.StringUtils;
 import unioeste.sd.connection.Connection;
 import unioeste.sd.connection.TcpConnection;
 import unioeste.sd.connection.UdpConnection;
 import unioeste.sd.structs.*;
 
+import javax.crypto.*;
 import java.io.*;
 import java.net.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 
 public class Client {
+
 
     static class ShutdownHookTask extends Thread {
         private final Client client;
@@ -104,5 +111,50 @@ public class Client {
 
     public Connection getConnection() {
         return connection;
+    }
+
+    public ChatMessage createMessageFromString(String s) {
+        s = s.trim();
+        if (s.charAt(0) != '/') {
+            return new ChatMessage(s, connection.user);
+        }
+        if (StringUtils.countMatches(s, " ") < 2) {
+            mainWindow.handleNewChatMessage(new ChatMessage("Command Incorrect!", new User("SERVER")));
+            return null;
+        }
+
+        int firstSpaceIndex = StringUtils.ordinalIndexOf(s, " ", 1);
+        int secondSpaceIndex = StringUtils.ordinalIndexOf(s, " ", 2);
+        String dstUsername = s.substring(firstSpaceIndex + 1, secondSpaceIndex);
+        String firstPart = s.substring(0, secondSpaceIndex + 1);
+        String msgTxt = s.substring(secondSpaceIndex + 1);
+
+        SecretKey secretKey = mainWindow.secretDialog.getSecretKeyByUser(new User(dstUsername));
+
+        if (secretKey == null) {
+            ChatMessage chatMessage = new ChatMessage(s, connection.user);
+            chatMessage.isWhisper = true;
+
+            return chatMessage;
+        }
+
+        try {
+            Cipher cipher = Cipher.getInstance("DES");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            byte[] bytes = cipher.doFinal(msgTxt.getBytes());
+            String encryptedMessage = Base64.getEncoder().encodeToString(bytes);
+
+            ChatMessage chatMessage = new ChatMessage(firstPart + encryptedMessage, connection.user);
+            chatMessage.isWhisper = true;
+
+            return chatMessage;
+
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
+                 BadPaddingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void parseCommand(User user, String text) throws IOException {
     }
 }

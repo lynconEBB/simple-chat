@@ -24,7 +24,7 @@ public class MainWindow extends Application {
     private ImBoolean showSecretWindow = new ImBoolean(false);
     private final LoginDialog loginDialog;
     private final FilesDialog filesDialog;
-    private final SecretDialog secretDialog;
+    public final SecretDialog secretDialog;
     private final List<MessageWidget> messageWidgets;
     private List<User> usersOnline;
     private Client client;
@@ -77,13 +77,15 @@ public class MainWindow extends Application {
             ImGui.inputText("Message", currentText);
             ImGui.sameLine();
             if (ImGui.button("Send")) {
-                if (currentText.isNotEmpty()) {
-                    ChatMessage chatMessage = new ChatMessage(currentText.get());
-                    chatMessage.user = client.getConnection().user;
-                    client.outManager.sendMessage(chatMessage);
+                if (currentText.isNotEmpty() && !currentText.get().isBlank() ) {
 
-                    messageWidgets.add(new MessageWidget(chatMessage));
-                    currentText.clear();
+                    ChatMessage chatMessage = client.createMessageFromString(currentText.get());
+                    if (chatMessage != null) {
+                        client.outManager.sendMessage(chatMessage);
+
+                        messageWidgets.add(new MessageWidget(new ChatMessage(currentText.get())));
+                        currentText.clear();
+                    }
                 }
             }
             ImGui.end();
@@ -101,7 +103,7 @@ public class MainWindow extends Application {
                     ImVec2 cursorPos = ImGui.getCursorPos();
                     ImGui.getWindowWidth();
                     ImGui.setCursorPos(ImGui.getWindowWidth() - (ImGui.calcTextSize("secret").x + 20), topY);
-                    if (ImGui.button("secret")){
+                    if (ImGui.button("secret##"+user.username)){
                         secretDialog.setCurrentUser(user);
                         showSecretWindow.set(true);
                     }
