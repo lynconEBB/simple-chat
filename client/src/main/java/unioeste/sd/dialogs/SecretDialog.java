@@ -5,7 +5,6 @@ import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
 import unioeste.sd.Client;
-import unioeste.sd.structs.ClientInfoMessage;
 import unioeste.sd.structs.User;
 
 import javax.crypto.SecretKey;
@@ -22,6 +21,7 @@ public class SecretDialog {
     private final SecretKeyFactory keyFactory;
     public Map<User, ImString> secrets = new ConcurrentHashMap();
     private User currentUser;
+    private String lastValidKey;
 
     public SecretDialog() {
         try {
@@ -36,9 +36,11 @@ public class SecretDialog {
         if (!secrets.containsKey(currentUser)) {
             secrets.put(currentUser, new ImString(20));
         }
+        lastValidKey = secrets.get(currentUser).get();
     }
     public SecretKey getSecretKeyByUser(User user) {
-        if (secrets.containsKey(user)) {
+        System.out.println(secrets.get(user));
+        if (secrets.containsKey(user) && !secrets.get(user).get().isBlank()) {
             try {
                 return keyFactory.generateSecret(new DESKeySpec(secrets.get(user).get().getBytes()));
             } catch (InvalidKeySpecException | InvalidKeyException e) {
@@ -50,7 +52,7 @@ public class SecretDialog {
 
 
     public void draw(ImBoolean showWindow, Client client) {
-
+        boolean bSaved = false;
         if (ImGui.begin("Secret Configuration", showWindow, ImGuiWindowFlags.NoResize
                 | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking)) {
 
@@ -66,17 +68,8 @@ public class SecretDialog {
                     showError = true;
                 }
                 else {
-                    System.out.println(currentUser.username);
-                    if (currentUser.equals(client.getConnection().user)) {
-                        User user = new User(client.getConnection().user.username, client.getConnection().user.name);
-                        try {
-                            user.key = keyFactory.generateSecret(new DESKeySpec(secrets.get(currentUser).get().getBytes()));
-                            client.outManager.sendMessage(new ClientInfoMessage(user));
-                            System.out.println("Mandou");
-                        } catch (InvalidKeySpecException | InvalidKeyException ignored) {}
-                    }
-
                     showError = false;
+                    bSaved = true;
                     showWindow.set(false);
                 }
             }
@@ -86,6 +79,9 @@ public class SecretDialog {
                     (float) (ImGui.getIO().getDisplaySizeY() * 0.5) - ImGui.getWindowHeight()/2);
 
             ImGui.end();
+        }
+        if(showWindow.get() == false && !bSaved) {
+            secrets.get(currentUser).set(lastValidKey);
         }
     }
 }

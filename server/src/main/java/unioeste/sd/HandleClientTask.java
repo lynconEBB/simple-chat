@@ -86,6 +86,9 @@ public class HandleClientTask implements Runnable{
             if (msg instanceof ClientInfoMessage infoMessage) {
                 server.handleClientUpdateMessage(infoMessage);
             }
+            if (msg instanceof WrongCredentialsMessage wrongMessage) {
+               server.handleWrongCredentialsMessage(wrongMessage);
+            }
         }
     }
 

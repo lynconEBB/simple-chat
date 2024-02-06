@@ -145,19 +145,6 @@ public class Server implements Runnable{
             Connection dstUserConnection = connections.get(new User(destUsername));
 
             if (dstUserConnection != null) {
-                if (dstUserConnection.user.key != null) {
-                    try {
-                        byte[] encrypted = Base64.getDecoder().decode(text);
-                        Cipher cipher = Cipher.getInstance("DES");
-                        cipher.init(Cipher.DECRYPT_MODE, dstUserConnection.user.key);
-                        byte[] bytes = cipher.doFinal(encrypted);
-                        text = new String(bytes);
-                    } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
-                             IllegalBlockSizeException | BadPaddingException | IllegalArgumentException e) {
-                        sendTo(serverUser, user, new ChatMessage("Wrong key used, configure the user key in the secret button!"));
-                        return;
-                    }
-                }
                 ChatMessage msg = new ChatMessage(text);
                 msg.isWhisper = true;
                 msg.user = user;
@@ -182,6 +169,10 @@ public class Server implements Runnable{
             connection.user = infoMessage.userInfo;
             connections.put(infoMessage.userInfo, connection);
         }
+    }
+
+    public void handleWrongCredentialsMessage(WrongCredentialsMessage wrongMessage) throws IOException {
+        sendTo(getServerUser(), wrongMessage.wrongUser, new ChatMessage("Message encrypted with wrong key, receiver ignored the message!"));
     }
 
     public void printInfo() {

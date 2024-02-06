@@ -7,15 +7,21 @@ import imgui.flag.ImGuiConfigFlags;
 import imgui.flag.ImGuiWindowFlags;
 import imgui.type.ImBoolean;
 import imgui.type.ImString;
+import org.apache.commons.codec.binary.Base64;
 import unioeste.sd.dialogs.FilesDialog;
 import unioeste.sd.dialogs.LoginDialog;
 import unioeste.sd.dialogs.SecretDialog;
 import unioeste.sd.structs.*;
 import unioeste.sd.widgets.MessageWidget;
 
+import javax.crypto.*;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.awt.SystemColor.text;
 
 public class MainWindow extends Application {
 
@@ -82,8 +88,10 @@ public class MainWindow extends Application {
                     ChatMessage chatMessage = client.createMessageFromString(currentText.get());
                     if (chatMessage != null) {
                         client.outManager.sendMessage(chatMessage);
+                        ChatMessage rawMessage = new ChatMessage(currentText.get(), client.getConnection().user);
+                        rawMessage.isWhisper = true;
 
-                        messageWidgets.add(new MessageWidget(new ChatMessage(currentText.get())));
+                        messageWidgets.add(new MessageWidget(rawMessage));
                         currentText.clear();
                     }
                 }
@@ -120,7 +128,25 @@ public class MainWindow extends Application {
     }
 
     public void handleNewChatMessage(ChatMessage message) {
+        if (message.isWhisper && !message.user.equals(client.getConnection().user)) {
+            SecretKey secretKey = secretDialog.getSecretKeyByUser(client.getConnection().user);
+            if (secretKey != null) {
+                try {
+                        byte[] encrypted = java.util.Base64.getDecoder().decode(message.text);
+                        Cipher cipher = Cipher.getInstance("DES");
+                        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+                        byte[] bytes = cipher.doFinal(encrypted);
+                        message.text = new String(bytes);
+                    } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                             IllegalBlockSizeException | BadPaddingException | IllegalArgumentException e) {
+                        client.outManager.sendMessage(new WrongCredentialsMessage(client.getConnection().user, message.user));
+                        return;
+                    }
+
+            }
+        }
         this.messageWidgets.add(new MessageWidget(message));
+
     }
     public void handleNewClientsListMessage(ClientsListMessage message) {
         usersOnline = message.users;
@@ -148,6 +174,5 @@ public class MainWindow extends Application {
     @Override
     protected void configure(Configuration config) {
         config.setTitle("Simple Chat");
-        config.setFullScreen(true);
     }
 }
